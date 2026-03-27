@@ -1,0 +1,100 @@
+# =========================
+# Eclipse
+# =========================
+.metadata/
+.classpath
+.project
+.settings/
+Servers/
+
+# =========================
+# Maven
+# =========================
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+
+# =========================
+# Build outputs
+# =========================
+build/
+*.class
+*.war
+*.ear
+*.jar
+
+# =========================
+# Logs & temp
+# =========================
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+hs_err_pid*
+replay_pid*
+
+# =========================
+# OS-specific files
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================
+# IntelliJ (si alguien lo abre en IDEA)
+# =========================
+*.iml
+.idea/
+
+# =========================
+# NetBeans (por si acaso)
+# =========================
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# =========================
+# Python / ML Project
+# =========================
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Estructuras específicas detectadas en tu log (ml/inference/...)
+ml/**/__pycache__/
+ml/**/*.pyc
+
+# Virtual environments (muy recomendado si usas venv o conda)
+.venv/
+venv/
+env/
+bin/
+lib/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.installed.cfg
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Módulos instalados localmente
+node_modules/
+.python-version
