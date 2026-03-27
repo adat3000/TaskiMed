@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui">
+<h:head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
+    <title>TaskiMed Web site</title>
+
+    <h:outputStylesheet library="css" name="bootstrap.min.css"/>
+    <h:outputScript library="js" name="bootstrap.bundle.min.js"/>
+    <h:outputScript library="js" name="functions.js"/>
+    <h:outputStylesheet library="css" name="layout.css"/>
+
+    <f:event type="preRenderView" listener="#{loginBean.validateSession}" />
+
+    <style>
+        /* Estilos para el Modo Oscuro */
+        body.dark-mode-active {
+            background-color: #121212 !important;
+            color: #e0e0e0 !important;
+        }
+        .dark-mode-active .card, 
+        .dark-mode-active .ui-sidebar,
+        .dark-mode-active .ui-dialog-content {
+            background-color: #1e1e1e !important;
+            color: #e0e0e0 !important;
+            border-color: #333 !important;
+        }
+
+		/* Ajuste para que todos los sidebars aparezcan debajo del menú */
+		.ui-sidebar {
+		    top: 56px !important; /* Altura promedio de una navbar de Bootstrap */
+		    height: calc(100% - 56px) !important;
+		    z-index: 1000 !important; /* Menor que el z-index del menú o del modal */
+		    box-shadow: none !important;
+		    border-top: 1px solid rgba(0,0,0,0.1);
+		}
+		
+		/* Asegurar que el overlay (fondo oscuro) también respete el menú */
+		.ui-sidebar-mask {
+		    top: 56px !important;
+		    z-index: 999 !important;
+		}
+		
+		/* Ajuste específico para el encabezado dentro del sidebar */
+		.sidebar-header {
+		    padding: 20px 15px !important;
+		    background-color: inherit;
+		}
+
+        /* Botón flotante siempre visible */
+        .floating-settings-btn {
+            position: fixed;
+            right: 25px;
+            bottom: 25px;
+            z-index: 2000 !important;
+            background-color: #2196f3;
+            color: white !important;
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            text-decoration: none;
+        }
+    </style>
+
+    <script type="text/javascript">
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode-active');
+        }
+
+        function changeFontSize(size) {
+            document.getElementsByTagName('html')[0].style.fontSize = size + 'px';
+        }
+    </script>
+</h:head>
+
+<h:body styleClass="ui-fluid">
+    <p:ajaxStatus onstart="PF('spinner').show();" onsuccess="PF('spinner').hide();" onerror="PF('spinner').hide();" />
+
+    <p:dialog widgetVar="spinner" modal="true" draggable="false" closable="false" resizable="false">
+        <h:panelGrid columns="1" style="text-align:center;">
+            <h:graphicImage value="/resources/images/spinner.gif" style="width:100px;height:100px"/>
+            <h:outputText value="Loading..."/>
+        </h:panelGrid>
+    </p:dialog>
+
+    <ui:insert name="top">
+        <ui:include src="/WEB-INF/menu.xhtml"/>
+    </ui:insert>
+
+    <div class="content-area" id="main-content">
+        <ui:insert name="contenido"/>
+    </div>
+
+    <p:commandLink id="btnSettings" 
+                   type="button"
+                   onclick="PF('sidebarSettings').toggle()"
+                   styleClass="floating-settings-btn"
+                   process="@this"
+                   global="false">
+        <i class="pi pi-book" style="font-size: 1.8rem;"></i>
+    </p:commandLink>
+
+    <p:sidebar widgetVar="sidebarSettings" 
+               position="right" 
+               styleClass="settings-sidebar"
+               appendTo="@(body)"
+               style="width: 320px">
+        
+        <div class="sidebar-header" style="padding: 15px 0;">
+            <h4><i class="pi pi-sliders-h me-2"></i>Interface Options</h4>
+        </div>
+        <hr/>
+        
+        <h:form id="frmGlobalSettings">
+            <div class="mb-4">
+                <p:outputLabel value="Appearance" styleClass="fw-bold mb-2 d-block"/>
+                <div class="d-flex align-items-center justify-content-between">
+                    <span>Dark Mode</span>
+                    <p:toggleSwitch onchange="toggleDarkMode()" />
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <p:outputLabel value="Text Scale" styleClass="fw-bold mb-2 d-block"/>
+                <p:selectOneButton onchange="changeFontSize(this.value)">
+                    <f:selectItem itemLabel="S" itemValue="14" />
+                    <f:selectItem itemLabel="M" itemValue="16" />
+                    <f:selectItem itemLabel="L" itemValue="20" />
+                </p:selectOneButton>
+            </div>
+
+            <div class="mt-4">
+                <p:commandButton value="Close Panel" 
+                                 type="button"
+                                 onclick="PF('sidebarSettings').hide();"
+                                 styleClass="ui-button-outlined w-100" />
+            </div>
+        </h:form>
+    </p:sidebar>
+</h:body>
+</html>

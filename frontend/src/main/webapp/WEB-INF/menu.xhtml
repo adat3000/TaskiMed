@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+				xmlns:h="http://xmlns.jcp.org/jsf/html"
+				xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+                xmlns:p="http://primefaces.org/ui">
+<style>
+.navbar, .ui-menubar {
+    z-index: 1050 !important; /* Por encima de los sidebars */
+}
+</style>
+<h:form id="menuForm">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-3">
+        <!-- Hamburger button -->
+        <button id="mobileMenuToggle" class="navbar-toggler" type="button"
+                onclick="document.getElementById('mobileMenu').classList.toggle('active')">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <a class="navbar-brand ms-3" href="/index.jsf">TaskiMed</a>
+
+        <!-- Horizontal menu (desktop) -->
+        <div class="collapse navbar-collapse" id="desktopMenu">
+            <p:menubar styleClass="bg-dark border-0 w-100" style="background: none;">
+
+                <p:submenu label="Menu" icon="pi pi-fw pi-list">
+                    <p:menuitem value="Users" outcome="users" icon="pi pi-fw pi-users"/>
+                    <p:menuitem value="Patients" outcome="patients" icon="pi pi-fw pi-star-fill"/>
+                    <p:menuitem value="Tasks" outcome="tasks" icon="pi pi-fw pi-file-edit"/>
+                    <p:menuitem value="Messages" outcome="messages" icon="pi pi-fw pi-envelope"/>
+                    <p:menuitem value="Problems" outcome="problems" icon="pi pi-fw pi-heart-fill"/>
+                    <p:menuitem value="Categories" outcome="categories" icon="pi pi-fw pi-server"/>
+                    <p:menuitem value="Teams" outcome="teams" icon="pi pi-fw pi-briefcase"/>
+                    <p:menuitem value="Dashboard" outcome="index" icon="pi pi-fw pi-file-edit"/>
+                </p:submenu>
+            </p:menubar>
+        </div>
+
+	    <!-- Floating user menu -->
+	    <div class="position-relative ms-auto">
+	        <div class="dropdown">
+	            <a class="nav-link dropdown-toggle text-white" href="#" id="userDropdown" role="button"
+	               data-bs-toggle="dropdown" aria-expanded="false">
+	                <i class="pi pi-user"></i>
+	                <h:outputText value="#{empty loginBean.user ? 'My account' : loginBean.user.firstName.concat(' ').concat(loginBean.user.lastName)}"/>
+	            </a>
+	            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+	                <li><a class="dropdown-item" href="profile.jsf"><i class="pi pi-user-edit"></i>Profile</a></li>
+	                <li><a class="dropdown-item" href="settings.jsf"><i class="pi pi-cog"></i>Settings</a></li>
+	                <li>
+	                    <p:commandLink value="Logout" actionListener="#{loginBean.logout}"
+	                                   styleClass="dropdown-item" ajax="false" icon="pi pi-power-off"/>
+	                </li>
+	            </ul>
+	        </div>
+	    </div>
+    </nav>
+
+	<!-- Accordion menu overlay (mobile) -->
+	<div id="mobileMenu">
+	    <p:accordionPanel activeIndex="0" collapsible="false">
+
+	        <p:tab title="Menu" toggleable="false">
+	            <p:link outcome="users" value="Users" icon="pi pi-fw pi-users" styleClass="btn btn-link w-100 text-start"/>
+	            <p:link outcome="patients" value="Patients" icon="pi pi-fw pi-star-fill" styleClass="btn btn-link w-100 text-start"/>
+	            <p:link outcome="tasks" value="Tasks" icon="pi pi-fw pi-file-edit" styleClass="btn btn-link w-100 text-start"/>
+	            <p:link outcome="messages" value="Messages" icon="pi pi-fw pi-envelope" styleClass="btn btn-link w-100 text-start"/>
+	            <p:link outcome="problems" value="Problems" icon="pi pi-fw pi-heart-fill" styleClass="btn btn-link w-100 text-start"/>
+	            <p:link outcome="categories" value="Categories" icon="pi pi-fw pi-server" styleClass="btn btn-link w-100 text-start"/>
+	            <p:link outcome="teams" value="Teams" icon="pi pi-fw pi-briefcase" styleClass="btn btn-link w-100 text-start"/>
+	            <p:link outcome="index" value="Dashboard" icon="pi pi-fw pi-file-edit" styleClass="btn btn-link w-100 text-start"/>
+	        </p:tab>
+	    </p:accordionPanel>
+	</div>
+</h:form>
+
+</ui:composition>

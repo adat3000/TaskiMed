@@ -1,0 +1,978 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui">
+
+<ui:composition template="/WEB-INF/plantilla.xhtml">
+    <f:metadata>
+        <f:viewAction action="#{taskBean.resetFilters}" onPostback="false" />
+    </f:metadata>
+    <ui:define name="contenido">
+		<style>
+		    /* 1. Estilos Base del Diálogo */
+		    .view-dialog .ui-dialog-content {
+		        padding: 0 !important;
+		    }
+		    
+		    .view-container {
+		        padding: 20px;
+		        font-family: "Roboto", sans-serif;
+		    }
+		    
+			.view-title {
+			    margin-bottom: 15px;
+			}
+			
+			.view-title h2 {
+			    font-size: 1.3rem;
+			    margin: 0;
+			    font-weight: 600;
+			}
+		    
+		    /* 2. Cuadrícula de Detalles */
+		    .view-grid {
+		        display: grid;
+		        grid-template-columns: 120px 1fr;
+		        row-gap: 12px;
+		        column-gap: 10px;
+		        align-items: start;
+		    }
+		    
+		    .label {
+		        font-weight: 600;
+		        color: #666;
+		        font-size: 0.9rem;
+		    }
+		    
+		    .value {
+		        color: #000;
+		        font-size: 0.95rem;
+		    }
+		
+		    /* 3. Badges de Estado */
+		    .status-badge {
+		        padding: 4px 10px;
+		        border-radius: 6px;
+		        font-size: 0.8rem;
+		        color: white;
+		        font-weight: 600;
+		        display: inline-block;
+		        text-transform: uppercase;
+		    }
+		    
+		    .status-badge.new          { background: #6c757d; }
+		    .status-badge.in_progress  { background: #f0ad4e; color: #222; }
+		    .status-badge.completed    { background: #28a745; }
+		    .status-badge.cancelled    { background: #dc3545; }
+		
+		    /* 4. Botones y Acciones */
+		    .form-actions-container {
+		        display: flex;
+		        justify-content: flex-end;
+		        gap: 10px;
+		        margin-top: 25px;
+		    }
+		
+		    .custom-dlg-btn {
+		        min-width: 100px !important;
+		        height: 36px !important;
+		        border-radius: 4px !important;
+		    }
+		
+		    /* Corrección del solapamiento de icono y texto */
+		    .custom-dlg-btn .ui-button-text {
+		        padding-left: 2rem !important;
+		    }
+		
+		    .save-btn { background-color: #0d6efd !important; border-color: #0d6efd !important; }
+		    .edit-btn { background-color: #f0ad4e !important; border-color: #f0ad4e !important; color: #222 !important; }
+		    .cancel-btn { background-color: #6c757d !important; border-color: #6c757d !important; color: white !important; }
+		
+		    /* 5. RESPONSIVIDAD (Control de Anchos) */
+		
+		    /* Desktop: 600px */
+		    @media (min-width: 1025px) {
+		        .ui-dialog.dlgViewResponsive {
+		            width: 600px !important;
+		        }
+		        /* Clase especial para descripciones muy largas */
+		        .ui-dialog.dlgDetailResponsive {
+		            width: 90% !important;
+		            max-width: 1100px !important;
+		        }
+		    }
+		
+		    /* Tablets: 70% o ancho intermedio */
+		    @media (min-width: 601px) and (max-width: 1024px) {
+		        .ui-dialog.dlgViewResponsive,
+		        .ui-dialog.dlgNewResponsive {
+		            width: 70% !important;
+		        }
+		    }
+		
+		    /* Smartphone: 380px */
+		    @media (max-width: 600px) {
+		        .ui-dialog.dlgViewResponsive {
+		            width: 380px !important;
+		            max-width: 95vw !important;
+		        }
+		        
+		        .ui-dialog.dlgNewResponsive {
+		            width: 95% !important;
+		        }
+		
+		        .view-grid {
+		            grid-template-columns: 100px 1fr; /* Un poco más estrecho el label en móvil */
+		        }
+		    }
+		
+		    /* Correcciones generales de padding para diálogos responsivos */
+		    .ui-dialog.dlgDetailResponsive .ui-dialog-titlebar,
+		    .ui-dialog.dlgDetailResponsive .ui-dialog-content {
+		        padding-left: 1.5rem !important;
+		        padding-right: 1.5rem !important;
+		        box-sizing: border-box !important;
+		    }
+		</style>
+        <p:growl id="messageBox" showDetail="true" autoUpdate="true" />
+
+        <h:form id="frm">
+            <div class="container-fluid px-3">
+				<div class="row mb-3 align-items-end">
+		            <div class="col-md-3">
+						<p:selectOneMenu id="patientList" value="#{patientBean.selectedPatient}"
+										 converter="omnifaces.SelectItemsConverter" var="p_item"
+										 filter="true" autoWidth="false" style="width: 100%"
+										 panelStyle="width: 390px">
+							<f:selectItem itemLabel="All Patients" itemValue="#{null}" noSelectionOption="true" />
+							<f:selectItems value="#{patientBean.patients}" var="p" 
+										   itemLabel="#{p.firstName} #{p.lastName}" itemValue="#{p}" />
+							
+							<p:ajax event="change" 
+									update="data problemList"
+									process="@this" 
+									listener="#{taskBean.onPatientSelectChange(patientBean.selectedPatient)}"
+									oncomplete="PF('tableEntity').filter();" />
+					
+							<p:column headerText="Patient">#{p_item.firstName} #{p_item.lastName}</p:column>
+							<p:column headerText="DOB">
+								<h:outputText value="#{p_item.dateOfBirth}"><f:convertDateTime pattern="MM/dd/yyyy" /></h:outputText>
+							</p:column>
+						
+						</p:selectOneMenu>
+		            </div>
+		
+		            <div class="col-md-3">
+						<p:selectOneMenu id="problemList" value="#{problemBean.selectedProblem}"
+										 converter="omnifaces.SelectItemsConverter" var="p_item"
+						                 filter="true" autoWidth="false" style="width:100%;"
+						                 panelStyle="width: 390px">
+						    <f:selectItem itemLabel="All Problems" itemValue="#{null}" noSelectionOption="true" />
+						    <f:selectItems value="#{patientBean.selectedPatient != null ? patientBean.selectedPatient.problems : problemBean.problems}" 
+						                   var="prob" itemValue="#{prob}" 
+						                   itemLabel="#{prob.name}" />
+						
+						    <p:ajax event="itemSelect" 
+						            update="data patientList"
+						            process="@this"
+						            listener="#{taskBean.onProblemSelectChange(problemBean.selectedProblem)}" 
+						            oncomplete="PF('tableEntity').filter();" />
+						
+							<p:column headerText="Problem">#{p_item.name}</p:column>
+						
+							<p:column headerText="Alias" style="text-align: center;">
+							    <h:panelGroup rendered="#{empty p_item.alias}">
+							        <span class="badge bg-secondary">None</span>
+							    </h:panelGroup>
+							
+							    <h:panelGroup rendered="#{not empty p_item.alias}"
+							                  layout="block" 
+							                  styleClass="badge-custom bg-info text-black">
+							        #{p_item.alias}
+							    </h:panelGroup>
+							</p:column>
+						
+						</p:selectOneMenu>
+					</div>
+
+                   	<div class="col-12 col-md-auto d-flex justify-content-center justify-content-md-start align-items-end mt-3 mt-md-0">
+						<p:commandButton value="Reset Filters" 
+						                 icon="pi pi-filter-slash" 
+						                 action="#{taskBean.resetFilters()}" 
+						                 update=":frm:data @form"
+						                 process="@this"
+						                 styleClass="btn btn-primary"
+						                 style="width: auto;" />                                	
+                   	</div>
+		        </div>
+
+                <p:outputPanel id="panelData">
+                    <div class="table-responsive">
+                        <p:dataTable id="data"
+                                     var="Task"
+                                     caption="Task"
+                                     value="#{taskBean.lazyModel}"
+                                     widgetVar="tableEntity"
+                                     paginator="true"
+                                     paginatorPosition="bottom"
+                                     lazy="true"
+                                     rows="10"
+                                     rowsPerPageTemplate="5,10,15,25,50"
+                                     currentPageReportTemplate="{startRecord} - {endRecord} of {totalRecords} records"
+                                     paginatorTemplate="{CurrentPageReport} {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                                     reflow="true"
+                                     responsiveLayout="scroll"
+                                     styleClass="table table-hover table-striped table-bordered table-sm"
+                                     emptyMessage="No records"
+                                     sortMode="single"
+                                     rowKey="#{Task.id}"
+                                     selectionMode="single"
+                                     selection="#{taskBean.selectedTask}">
+                            <f:facet name="header">
+                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                                    <!-- Column Toggler -->
+                                    <div>
+                                        <p:commandButton id="toggler" type="button" value="☰" styleClass="btn btn-outline-secondary" />
+                                        <p:columnToggler datasource="data" trigger="toggler"/>
+                                    </div>
+
+									<div class="me-3">
+										<p:commandButton value="Tasks" type="button"
+											style="
+									            padding: 0;
+									            margin: 0;
+									            border: none;
+									            background: transparent;
+									            color: #000000;
+									            font-size: 1.3rem;
+									            font-weight: 700;
+									            border-bottom: 2px solid #007ad9;
+									            box-shadow: none;
+									            cursor: default;
+									        " />
+									</div>
+									<div class="me-3 d-flex align-items-center gap-5">
+									    <p:selectOneMenu id="taskFiltro" value="#{taskBean.currentFilter}" 
+									                     style="width:190px; vertical-align: middle;">
+									        <f:selectItem itemLabel="📚 All Tasks" itemValue="ALL"/>
+									        <f:selectItem itemLabel="👤 Assigned to Me" itemValue="ASSIGNED_TO"/>
+									        <f:selectItem itemLabel="✍️ Created by Me" itemValue="CREATED_BY"/>
+									        <f:selectItem itemLabel="⏰ Expired" itemValue="EXPIRED"/>
+									        <f:selectItem itemLabel="📅 Pending" itemValue="NOT_EXPIRED"/>
+									        <f:selectItem itemLabel="🆕 Status: New" itemValue="NEW"/>
+									        <f:selectItem itemLabel="⏳ Status: In Progress" itemValue="IN_PROGRESS"/>
+									        <f:selectItem itemLabel="✅ Status: Completed" itemValue="COMPLETED"/>
+									        <f:selectItem itemLabel="🚫 Status: Cancelled" itemValue="CANCELLED"/>
+									
+									        <p:ajax listener="#{taskBean.applyFilter}" update=":frm:data" oncomplete="PF('tableEntity').filter();" />
+									    </p:selectOneMenu>
+										<h:panelGroup id="notificationWrapper" rendered="#{not empty notificationBean.urgentTasks and notificationBean.urgentTasks.size() > 0}">
+							                <h:panelGroup id="notif-trigger-container" styleClass="notif-container" layout="block">
+							                    <i class="pi pi-bell notification-icon" style="color: #495057; font-size: 1.5rem;"></i>
+							                    
+							                    <h:panelGroup rendered="#{not empty notificationBean.urgentTasks}">
+							                        <span class="notification-badge">
+							                            #{notificationBean.urgentTasks.size()}
+							                        </span>
+							                    </h:panelGroup>
+							                </h:panelGroup>
+							
+							                <p:overlayPanel for="notif-trigger-container" 
+							                                widgetVar="notifPanel" 
+							                                dismissable="true" 
+							                                style="width:400px"
+							                                appendTo="@(body)"> 
+							                    <div class="notif-header" style="text-align: center; color: #2196f3; font-weight: bold; font-style: italic;">Pending Tasks</div>
+							                    
+							                    <ui:repeat value="#{notificationBean.urgentTasks}" var="task">
+							                        <div class="notif-item d-flex gap-3">
+							                            <div class="notif-content">
+														    <span class="badge 
+														        #{task.status eq 'NEW' ? 'bg-secondary' : 
+														        (task.status eq 'IN_PROGRESS' ? 'bg-warning text-dark' : 
+														        (task.status eq 'COMPLETED' ? 'bg-success' : 
+														        (task.status eq 'CANCELLED' ? 'bg-danger' : 'bg-light text-dark')))}">
+														        #{task.status}
+														    </span>
+							                                <span class="notif-desc">#{task.description.length() > 50 ? task.description.substring(0,50).concat('...') : task.description}</span>
+							                                <span class="notif-time #{notificationBean.getTimeRemaining(task.dueDate) eq 'Expired' ? 'fw-bold text-danger' : ''}">
+							                                    <i class="pi pi-clock" style="font-weight: bold; font-size: 0.8rem"></i> 
+							                                    #{notificationBean.getTimeRemaining(task.dueDate)}
+							                                </span>
+							                            </div>
+							                            
+							                            <p:commandLink update=":dlgViewTask"
+							                                           oncomplete="PF('notifPanel').hide(); PF('wdlgViewTask').show();"
+							                                           process="@this"
+							                                           styleClass="notif-link">
+							                                <f:setPropertyActionListener value="#{task}" target="#{taskBean.selectedTask}" />
+							                                <f:setPropertyActionListener value="Update" target="#{taskBean.action}" />
+							                                <i class="pi pi-eye" style="#{taskBean.canModify(task) and task.status ne 'COMPLETED' and task.status ne 'CANCELLED' 
+								  ? 'color: #007bff;' : 'color: #495057; font-weight: bold;'}"></i>
+							                            </p:commandLink>
+							                        </div>
+							                    </ui:repeat>
+							
+							                    <h:panelGroup rendered="#{empty notificationBean.urgentTasks}">
+							                        <div class="p-3 text-center">No pending tasks found</div>
+							                    </h:panelGroup>
+							                </p:overlayPanel>
+							            </h:panelGroup>
+									</div>
+
+                                    <!-- Buscar -->
+                                    <div class="d-flex align-items-center flex-nowrap" style="white-space: nowrap;">
+                                        <p:outputLabel for="globalFilter" value="Search:" styleClass="me-2" />
+                                        <p:inputText id="globalFilter"
+                                                     placeholder="Enter value to filter"
+                                                     style="max-width: 200px;"
+                                                     onkeypress="if (event.keyCode == 13) { PF('tableEntity').filter(); return false; }" />
+
+                                        <p:commandButton id="btnBuscar"
+                                                         icon="pi pi-search"
+                                                         styleClass="btn btn-outline-secondary ms-2"
+                                                         onclick="PF('tableEntity').filter(); return false;" />
+                                    </div>
+
+                                    <!-- Exportar -->
+                                    <div>
+                                        <p:commandButton value="Export to Excel" icon="pi pi-file-excel"
+                                                         styleClass="btn btn-outline-secondary"
+                                                         ajax="false">
+                                            <p:dataExporter type="xlsx"
+                                                            target="data"
+                                                            fileName="tasks"
+                                                            exportHeader="true"
+                                                            exportFooter="true" />
+                                        </p:commandButton>
+                                    </div>
+
+                                    <!-- Botón Nuevo -->
+                                    <div>
+                                        <p:commandButton id="btnNuevo" value="New" icon="pi pi-fw pi-plus"
+                                                         styleClass="btn btn-primary"
+                                                         actionListener="#{taskBean.clear()}"
+                                                         oncomplete="PF('wdlgData').show();"
+                                                         update=":dlgData">
+                                            <f:setPropertyActionListener value="Create" target="#{taskBean.action}" />
+                                        </p:commandButton>
+                                    </div>
+
+                                </div>
+                            </f:facet>
+
+                            <!-- Columnas -->
+                            <p:column headerText="ID" visible="false" sortBy="#{Task.id}" field="id" filterBy="#{Task.id}" filterStyle="display:none">
+                                <h:outputLabel value="#{Task.id}" />
+                            </p:column>
+
+                            <p:column headerText="Description" sortBy="#{Task.description}" field="description" filterBy="#{Task.description}" filterStyle="display:none">
+                                <h:outputLabel value="#{Task.description.length() > 30 ? Task.description.substring(0,30).concat('...') : Task.description}" title="#{Task.description.length() > 30 ? Task.description : '' }" />
+                            </p:column>
+
+							<p:column headerText="Status" sortBy="#{Task.status}" field="status" filterBy="#{Task.status}" filterStyle="display:none">
+							    <span class="badge 
+							        #{Task.status eq 'NEW' ? 'bg-secondary' : 
+							        (Task.status eq 'IN_PROGRESS' ? 'bg-warning text-dark' : 
+							        (Task.status eq 'COMPLETED' ? 'bg-success' : 
+							        (Task.status eq 'CANCELLED' ? 'bg-danger' : 'bg-light text-dark')))}">
+							        #{Task.status}
+							    </span>
+							</p:column>
+
+                            <p:column headerText="Patient" sortBy="#{Task.patientName}" field="patientName" filterBy="#{Task.patientName}" filterStyle="display:none">
+							    <h:outputText value="#{Task.patientName}" styleClass="#{not empty Task.patientName}" />
+
+							    <h:panelGroup rendered="#{empty Task.patientName}">
+							        <span class="badge bg-secondary">Unknown patient</span>
+							    </h:panelGroup>
+                            </p:column>
+
+							<p:column headerText="Problem" sortBy="#{Task.problemAlias}" 
+							          field="problemAlias" filterBy="#{Task.problemAlias}" filterStyle="display:none">
+							    
+							    <h:panelGroup rendered="#{empty Task.problemAlias}">
+							        <span class="badge bg-secondary">None</span>
+							    </h:panelGroup>
+							
+							    <h:panelGroup id="problemBadge" rendered="#{not empty Task.problemAlias}"
+							                  layout="block" 
+							                  styleClass="badge-custom bg-info text-black">
+							        #{Task.problemAlias}
+							    </h:panelGroup>
+							    <p:overlayPanel for="problemBadge" 
+							                    dismissable="true" 
+							                    showEvent="click"
+							                    showCloseIcon="true" 
+							                    style="width:200px"
+							                    my="center top"
+							                    at="center bottom">
+
+							        <div style="padding: 15px; font-weight: bold; text-align: center;">
+							            #{Task.problemName}
+							        </div>
+							    </p:overlayPanel>
+							</p:column>
+
+							<p:column headerText="Team" sortBy="#{Task.teamAlias}" 
+							          field="teamAlias" filterBy="#{Task.teamAlias}" filterStyle="display:none">
+							    
+							    <h:panelGroup rendered="#{empty Task.teamAlias}">
+							        <span class="badge bg-secondary">None</span>
+							    </h:panelGroup>
+							
+							    <h:panelGroup id="teamBadge" rendered="#{not empty Task.teamAlias}"
+							                  layout="block" 
+							                  styleClass="badge-custom bg-info text-black">
+							        #{Task.teamAlias}
+							    </h:panelGroup>
+							    <p:overlayPanel for="teamBadge" 
+							                    dismissable="true" 
+							                    showEvent="click"
+							                    showCloseIcon="true" 
+							                    style="width:200px"
+							                    my="center top"
+							                    at="center bottom">
+
+							        <div style="padding: 15px; font-weight: bold; text-align: center;">
+							            #{Task.teamName}
+							        </div>
+							    </p:overlayPanel>
+							</p:column>
+
+                            <p:column headerText="Assigned To" sortBy="#{Task.assignedToName}" field="assignedToName" filterBy="#{Task.assignedToName}" filterStyle="display:none">
+							    <h:outputText value="#{Task.assignedToName}" 
+							                  styleClass="#{not empty Task.assignedToName and not Task.assignedToActive ? 'text-danger fw-bold' : ''}" />
+							    
+							    <h:panelGroup rendered="#{not empty Task.assignedToName and not Task.assignedToActive}">
+							        <i class="pi pi-exclamation-triangle text-danger" title="User is currently INACTIVE" />
+							    </h:panelGroup>
+
+							    <h:panelGroup rendered="#{empty Task.assignedToName}">
+							        <span class="badge bg-secondary">Not assigned</span>
+							    </h:panelGroup>
+							</p:column>
+							
+							<p:column headerText="Created By" sortBy="#{Task.createdByName}" field="createdByName" filterBy="#{Task.createdByName}" filterStyle="display:none">
+							    <h:outputText value="#{Task.createdByName}" 
+							                  styleClass="#{not empty Task.createdByName and not Task.createdByActive ? 'text-danger fw-bold' : ''}" />
+							    
+							    <h:panelGroup rendered="#{not empty Task.createdByName and not Task.createdByActive}">
+							        <i class="pi pi-exclamation-triangle text-danger" title="User is currently INACTIVE" />
+							    </h:panelGroup>
+
+							    <h:panelGroup rendered="#{empty Task.createdByName}">
+							        <span class="badge bg-secondary">Unknown user</span>
+							    </h:panelGroup>
+							</p:column>
+
+							<p:column headerText="Category" sortBy="#{Task.categoryAlias}" 
+							          field="categoryAlias" filterBy="#{Task.categoryAlias}" filterStyle="display:none">
+							    
+							    <h:panelGroup rendered="#{empty Task.categoryAlias}">
+							        <span class="badge bg-secondary">None</span>
+							    </h:panelGroup>
+							
+							    <h:panelGroup id="categoryBadge" rendered="#{not empty Task.categoryAlias}"
+							                  layout="block" 
+							                  styleClass="badge-custom bg-primary text-white">
+							        #{Task.categoryAlias}
+							    </h:panelGroup>
+							    <p:overlayPanel for="categoryBadge" 
+							                    dismissable="true" 
+							                    showEvent="click"
+							                    showCloseIcon="true" 
+							                    style="width:200px"
+							                    my="center top"
+							                    at="center bottom">
+
+							        <div style="padding: 15px; font-weight: bold; text-align: center;">
+							            #{Task.categoryName}
+							        </div>
+							    </p:overlayPanel>
+							</p:column>
+
+                            <p:column headerText="Due Date"
+                                      sortBy="#{Task.dueDate}"
+                                      field="dueDate"
+                                      filterBy="#{Task.dueDate}"
+                                      filterStyle="display:none"
+                                      exportValue="#{Task.formattedDueDate}">
+                                <h:outputText value="#{Task.formattedDueDate}" 
+							        styleClass="#{(Task.status eq 'NEW' or Task.status eq 'IN_PROGRESS') 
+							                      and notificationBean.getTimeRemaining(Task.dueDate) eq 'Expired' 
+							                      ? 'text-danger fw-bold' : ''}" />
+                            </p:column>
+
+                            <p:column headerText="Created At"
+                                      visible="false"
+                                      sortBy="#{Task.createdAt}"
+                                      field="createdAt"
+                                      filterBy="#{Task.createdAt}"
+                                      filterStyle="display:none"
+                                      exportValue="#{Task.formattedCreatedAt}">
+                                <h:outputText value="#{Task.formattedCreatedAt}" />
+                            </p:column>
+
+							<p:column headerText="View" exportable="false">
+							    <p:commandButton icon="pi pi-eye"
+							                     actionListener="#{taskBean.prepareView(Task)}"
+							                     update=":dlgViewTask"
+							                     oncomplete="PF('wdlgViewTask').show();"
+							                     process="@this"
+							                     styleClass="ui-button-flat ui-button-plain"
+							                     style="#{taskBean.canModify(Task) and Task.status ne 'COMPLETED' and Task.status ne 'CANCELLED' 
+								                              ? 'color: #007bff;' : 'color: #495057; font-weight: bold;'}">
+							    </p:commandButton>
+							</p:column>
+							<p:column headerText="Delete" exportable="false">
+							    <p:commandButton icon="pi pi-trash"
+							                     action="#{taskBean.delete}"
+							                     update=":frm:data, :messageBox, :notificationWrapper"
+							                     process="@this"
+							                     rendered="#{taskBean.canModify(Task)}"
+							                     data-pfconfirmcommand="true">
+							        <p:confirm header="Confirmation"
+							                   message="Do you want to delete this task?"
+							                   icon="pi pi-exclamation-triangle" />
+							        <f:setPropertyActionListener value="#{Task}" target="#{taskBean.selectedTask}" />
+							    </p:commandButton>
+							</p:column>
+                        </p:dataTable>
+                    </div>
+                </p:outputPanel>
+            </div>
+
+            <p:confirmDialog global="true" showEffect="fade" hideEffect="fade">
+                <p:commandButton value="Yes" type="button"
+                                 styleClass="ui-confirmdialog-yes" icon="pi pi-check" />
+                <p:commandButton value="No" type="button"
+                                 styleClass="ui-confirmdialog-no ui-button-flat" icon="pi pi-times" />
+            </p:confirmDialog>
+        </h:form>
+
+        <!-- Diálogo de Nuevo/Editar -->
+        <p:dialog id="dlgData" widgetVar="wdlgData" resizable="true"
+                  modal="true" appendTo="@(body)" closeOnEscape="true"
+                  responsive="true" style="max-width: 100vw; overflow-x: hidden;"
+                  styleClass="dlgNewResponsive"
+                  onShow="initDescCounter('frmNewEdit:description', 'descCounterMsg', 300)"
+                  header="#{taskBean.action eq 'Update' ? 'Task Info': 'New Task'}">
+            <p:ajax event="close" listener="#{taskBean.clear()}" update="frmNewEdit:panelNewEdit" />
+
+            <h:form id="frmNewEdit">
+                <p:outputPanel id="panelNewEdit" style="overflow-y:auto; max-height:70vh; overflow-x:hidden;">
+                    <div class="mx-auto px-3" style="max-width: 800px; width: 100%;">
+                        <div class="card mt-3">
+                            <div class="card-header bg-primary text-white">
+                                Task Details
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+
+                                    <div class="col-md-12 mb-3">
+                                        <p><strong>Description:</strong>
+											<h:panelGroup id="descWrapper">
+												<p:inputTextarea id="description"
+												                 value="#{taskBean.selectedTask.description}"
+												                 maxlength="300"
+												                 autoResize="true"
+												                 required="true"
+												                 readonly="#{taskBean.action eq 'Update' and taskBean.taskFinalized}"
+												                 styleClass="form-control"
+												                 onkeyup="updateDescCounterColor(this, 'descCounterMsg', 300)" />
+												<span id="descCounterMsg" 
+												      style="font-size:.75rem; float:right; margin-top:4px; color:#555;">
+													0 / 300
+												</span>
+											</h:panelGroup>
+                                        </p>
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+									    <p><strong>Status:</strong>
+									        
+									        <h:panelGroup rendered="#{taskBean.action eq 'Create'}">
+									            <span class="badge bg-secondary">#{taskBean.selectedTask.status}</span>
+									        </h:panelGroup>
+									
+									        <h:panelGroup rendered="#{taskBean.action eq 'Update' 
+									                                and taskBean.selectedTask.status ne 'COMPLETED' 
+									                                and taskBean.selectedTask.status ne 'CANCELLED'}">
+									            <p:selectOneMenu id="status"
+									                             value="#{taskBean.selectedTask.status}"
+									                             required="true"
+									                             rendered="#{not empty taskBean.selectedTask}"
+									                             styleClass="form-control">
+									                <f:selectItems value="#{taskBean.editableStatusList}" />
+									            </p:selectOneMenu>
+									        </h:panelGroup>
+									        
+									        <h:panelGroup rendered="#{taskBean.action eq 'Update' 
+									                                and (taskBean.selectedTask.status eq 'COMPLETED' 
+									                                or taskBean.selectedTask.status eq 'CANCELLED')}">
+									            <span class="badge 
+									                #{taskBean.selectedTask.status eq 'COMPLETED' ? 'bg-success' : 'bg-danger'}">
+									                #{taskBean.selectedTask.status}
+									            </span>
+									            <h:inputHidden value="#{taskBean.selectedTask.status}" />
+									        </h:panelGroup>
+									    </p>
+									</div>
+
+									<div class="col-md-6 mb-3">
+									    <p><strong>Patient:</strong>
+									        <ui:fragment rendered="#{not empty taskBean.selectedTask}">
+												<p:selectOneMenu id="patient"
+												                 value="#{taskBean.localPatient}"
+												                 converter="omnifaces.SelectItemsConverter"
+												                 var="p_item"
+												                 filter="true" filterMatchMode="contains"
+												                 style="width:100%"
+												                 panelStyle="width:320px; max-width:90vw;"> <f:selectItem itemLabel="Choose..." itemValue="#{null}" />
+												    
+												    <f:selectItems value="#{patientBean.patients}" 
+												                   var="p"
+												                   itemLabel="#{p.firstName} #{p.lastName}" 
+												                   itemValue="#{p}" />
+												
+												    <p:ajax event="itemSelect" listener="#{taskBean.onPatientSelectNewEdit(taskBean.localPatient)}" process="@this" update="problem" />
+												
+												    <p:column headerText="Patient" style="padding: 8px 4px !important;">
+												        #{p_item.firstName} #{p_item.lastName}
+												    </p:column>
+												    
+												    <p:column headerText="DOB" style="padding: 8px 4px !important; width: 85px;">
+												        <h:outputText value="#{p_item.dateOfBirth}">
+												            <f:convertDateTime pattern="MM/dd/yyyy" />
+												        </h:outputText>
+												    </p:column>
+												
+												    <p:column headerText="Pts" style="padding: 8px 4px !important; width: 40px; text-align: center;">
+												        <h:panelGroup rendered="#{empty p_item.problems or p_item.problems.size() eq 0}">
+												            <span class="badge bg-secondary" style="font-size: 0.85em; padding: 3px 6px;">0</span>
+												        </h:panelGroup>
+												        <h:panelGroup rendered="#{not empty p_item.problems and p_item.problems.size() gt 0}">
+												            <span class="badge bg-primary" style="font-size: 0.85em; padding: 3px 6px;">#{p_item.problems.size()}</span>
+												        </h:panelGroup>
+												    </p:column>
+												</p:selectOneMenu>
+									        </ui:fragment>
+									    </p>
+									</div>
+
+                                    <div class="col-md-6 mb-3">
+									    <p><strong>Team:</strong>
+									        <ui:fragment rendered="#{not empty taskBean.selectedTask}">
+									            <p:selectOneMenu id="team"
+									                             value="#{taskBean.selectedTask.teamId}"
+									                             filter="true" filterMatchMode="contains"
+									                             disabled="#{taskBean.action eq 'Update' and taskBean.taskFinalized}"
+									                             style="width:100%">
+									                <f:selectItem itemLabel="Choose..." itemValue="#{null}" />
+									                <f:selectItems value="#{teamBean.teams}" var="c"
+									                               itemValue="#{c.id}" itemLabel="#{c.alias} - #{c.name}" />
+									                <p:ajax listener="#{taskBean.handleTeamChange()}" update="assignedTo" />
+									            </p:selectOneMenu>
+									        </ui:fragment>
+									    </p>
+									</div>
+									
+									<div class="col-md-6 mb-3">
+									    <p><strong>Assigned User:</strong>
+									        <ui:fragment rendered="#{not empty taskBean.selectedTask}">
+									            <p:selectOneMenu id="assignedTo"
+												                 value="#{taskBean.selectedUser}"
+												                 converter="omnifaces.SelectItemsConverter"
+												                 var="u_item"
+												                 filter="true" filterMatchMode="contains"
+												                 disabled="#{taskBean.action eq 'Update' and taskBean.taskFinalized}"
+												                 style="width:100%">
+												    
+												    <f:selectItem itemLabel="Choose..." itemValue="#{null}" />
+												    <f:selectItems value="#{taskBean.filteredUsers != null ? taskBean.filteredUsers : userBean.users}" 
+												                   var="u"
+												                   itemValue="#{u}" 
+												                   itemLabel="#{u.firstName} #{u.lastName}" />
+												
+												    <p:ajax listener="#{taskBean.handleUserChange()}" update="team" />
+												
+												    <p:column>
+												        <div class="d-flex flex-column">
+												            <h:panelGroup styleClass="#{not u_item.active ? 'text-danger fw-bold' : ''}" style="font-size: 0.9rem;">
+												                <h:outputText value="#{u_item.firstName} #{u_item.lastName}" />
+												                <h:outputText value=" - INACTIVE" rendered="#{not u_item.active}" />
+												            </h:panelGroup>
+												            <h:outputText value="#{u_item.email}" styleClass="text-secondary" style="font-size: 0.75rem;" />
+												        </div>
+												    </p:column>
+												</p:selectOneMenu>
+									        </ui:fragment>
+									    </p>
+									</div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <p><strong>Problem:</strong>
+											<ui:fragment rendered="#{not empty taskBean.selectedTask}">
+												<p:selectOneMenu id="problem"
+												                 value="#{taskBean.selectedTask.problemId}"
+												                 filter="true" filterMatchMode="contains"
+												                 disabled="#{taskBean.action eq 'Update' and taskBean.taskFinalized}"
+												                 style="width:100%">
+												    <f:selectItem itemLabel="Choose..." itemValue="#{null}" />
+												    <f:selectItems value="#{taskBean.localPatient.problems}" var="c"
+												                   itemValue="#{c.id}" itemLabel="#{c.alias} - #{c.name}" />
+												</p:selectOneMenu>
+											</ui:fragment>
+                                        </p>
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <p><strong>Created By:</strong>
+                                            <h:panelGroup layout="block" styleClass="ui-inputgroup">
+									            <p:inputText id="createdBy" 
+									                         value="#{taskBean.selectedTask.createdByName} #{not taskBean.selectedTask.createdByActive ? ' (INACTIVE)' : ''}" 
+									                         readonly="true"
+									                         styleClass="form-control ui-state-disabled #{not taskBean.selectedTask.createdByActive ? 'text-danger fw-bold' : ''}"
+									                         style="#{not taskBean.selectedTask.createdByActive ? 'border-color: #dc3545 !important; background-color: #fff5f5 !important;' : ''}"/>
+									            
+									            <h:panelGroup rendered="#{not taskBean.selectedTask.createdByActive}" 
+									                          styleClass="ui-inputgroup-addon bg-white">
+									                <i class="pi pi-exclamation-circle text-danger my-warn-icon" />
+									            </h:panelGroup>
+									            
+									        </h:panelGroup>
+									        
+									        <p:tooltip for="@(.my-warn-icon)" 
+									                   value="The user who created this task is currently inactive." 
+									                   position="top"/>
+                                        </p>
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <p><strong>Category:</strong>
+											<ui:fragment rendered="#{not empty taskBean.selectedTask}">
+												<p:selectOneMenu id="category"
+												                 value="#{taskBean.selectedTask.categoryId}"
+												                 filter="true" filterMatchMode="contains"
+												                 disabled="#{taskBean.action eq 'Update' and taskBean.taskFinalized}"
+												                 style="width:100%">
+												    <f:selectItem itemLabel="Choose..." itemValue="#{null}" />
+												    <f:selectItems value="#{categoryBean.categories}" var="c"
+												                   itemValue="#{c.id}" itemLabel="#{c.name}" />
+												</p:selectOneMenu>
+											</ui:fragment>
+                                        </p>
+                                    </div>
+
+									<div class="col-md-6 mb-3">
+									    <p><strong>Due Date:</strong></p>
+									    <p:calendar id="dueDate"
+									                value="#{taskBean.selectedTask.dueDate}"
+									                pattern="MM/dd/yyyy"
+									                showIcon="true"
+									                readonly="#{taskBean.action eq 'Update' and taskBean.taskFinalized}"
+									                mindate="#{taskBean.today}"
+									                styleClass="form-control" />
+									</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="col-12 d-flex justify-content-center gap-3 mt-3">
+                            <p:commandButton id="ok_button" value="Save"
+                                             actionListener="#{taskBean.ejecutar()}"
+                                             process="@form"
+                                             rendered="#{taskBean.action ne 'Update' or not taskBean.taskFinalized}"
+                                             oncomplete="if (args &amp;&amp; !args.validationFailed) PF('wdlgData').hide();"
+                                             update=":frmNewEdit:panelNewEdit :frm:data :messageBox :notificationWrapper"
+                                             styleClass="btn btn-primary" />
+
+                            <p:commandButton id="cancel_button" value="Cancel"
+                                             immediate="true"
+                                             actionListener="#{taskBean.clear()}"
+                                             oncomplete="PF('wdlgData').hide();"
+                                             update="panelNewEdit"
+                                             styleClass="btn btn-secondary" />
+
+                            <p:defaultCommand target="ok_button" />
+                        </div>
+                    </div>
+                </p:outputPanel>
+            </h:form>
+        </p:dialog>
+		<p:dialog id="dlgViewTask"
+		          widgetVar="wdlgViewTask"
+		          modal="true"
+		          header="Task Details"
+		          responsive="true"
+		          resizable="true"
+		          styleClass="view-dialog dlgViewResponsive"
+		          showEffect="fade" hideEffect="fade">
+		    <h:form id="frmViewTask">   <!-- ← FORM OBLIGATORIO -->
+			
+			    <h:panelGroup id="panelViewTask" layout="block" styleClass="view-container">
+			
+			        <!-- Sección de Título -->
+			        <div class="view-title">
+			            #{taskBean.selectedTask.description}
+			        </div>
+			
+			        <!-- Sección de Detalles -->
+			        <div class="view-grid">
+						<div class="label">Status</div>
+						<div class="value">
+						    <ui:fragment rendered="#{not taskBean.canModifySelectedTask()}">
+						        <span class="status-badge #{taskBean.selectedTask.status.toLowerCase()}">
+						            #{taskBean.selectedTask.status}
+						        </span>
+						    </ui:fragment>
+						
+						    <ui:fragment rendered="#{taskBean.canModifySelectedTask() 
+						                            and taskBean.selectedTask.status ne 'COMPLETED' 
+						                            and taskBean.selectedTask.status ne 'CANCELLED'}">
+						        <p:selectOneMenu id="statusView"
+						                         value="#{taskBean.selectedTask.status}"
+						                         autoWidth="false" 
+						                         style="width: 140px; min-width: 140px; vertical-align: middle;"
+						                         panelStyle="width: 160px"
+						                         escape="false"
+						                         var="st">
+						            <f:selectItems value="#{taskBean.editableStatusList}" />
+						            <p:column style="padding:2px 6px; min-height:26px; display:flex; align-items:center;">
+						                <span class="status-badge #{st.toLowerCase()}">
+						                    #{st}
+						                </span>
+						            </p:column>
+						        </p:selectOneMenu>
+						    </ui:fragment>
+						    
+						    <ui:fragment rendered="#{taskBean.canModifySelectedTask() 
+						                            and (taskBean.selectedTask.status eq 'COMPLETED' 
+						                            or taskBean.selectedTask.status eq 'CANCELLED')}">
+						        <span class="status-badge #{taskBean.selectedTask.status.toLowerCase()}">
+						            #{taskBean.selectedTask.status}
+						        </span>
+						    </ui:fragment>
+						</div>
+	
+			            <div class="label">Patient</div>
+			            <div class="value">
+						    <h:panelGroup rendered="#{empty taskBean.selectedTask.patientName}">
+						        <span class="badge bg-secondary">Unknown patient</span>
+						    </h:panelGroup>
+						    
+						    <h:panelGroup rendered="#{not empty taskBean.selectedTask.patientName}">
+						        <h:outputText value="#{taskBean.selectedTask.patientName}" />
+						    </h:panelGroup>
+			            </div>
+	
+						<div class="label">Problem</div>
+						<div class="value">
+						    <h:panelGroup rendered="#{empty taskBean.selectedTask.problemName}">
+						        <span class="badge bg-secondary">None</span>
+						    </h:panelGroup>
+						    
+						    <h:panelGroup rendered="#{not empty taskBean.selectedTask.problemName}">
+						        <h:outputText value="#{taskBean.selectedTask.problemName}" />
+						    </h:panelGroup>
+						</div>
+			
+			            <div class="label">Assigned To</div>
+			            <div class="value">
+						    <h:outputText value="#{taskBean.selectedTask.assignedToName}" 
+						                  styleClass="#{not empty taskBean.selectedTask.assignedToName and not taskBean.selectedTask.assignedToActive ? 'text-danger fw-bold' : ''}" />
+						    <h:panelGroup rendered="#{not empty taskBean.selectedTask.assignedToName and not taskBean.selectedTask.assignedToActive}">
+						        <i class="pi pi-exclamation-triangle text-danger ms-1 tip-inactive-user" />
+						    </h:panelGroup>
+						    <h:panelGroup rendered="#{empty taskBean.selectedTask.assignedToName}">
+						        <span class="badge bg-secondary">Not assigned</span>
+						    </h:panelGroup>
+						</div>
+	
+						<div class="label">Team</div>
+						<div class="value">
+						    <h:panelGroup rendered="#{empty taskBean.selectedTask.teamName}">
+						        <span class="badge bg-secondary">None</span>
+						    </h:panelGroup>
+						    
+						    <h:panelGroup rendered="#{not empty taskBean.selectedTask.teamName}">
+						        <h:outputText value="#{taskBean.selectedTask.teamName}" />
+						    </h:panelGroup>
+						</div>
+			
+			            <div class="label">Created By</div>
+			            <div class="value">
+						    <h:outputText value="#{taskBean.selectedTask.createdByName}" 
+						                  styleClass="#{not empty taskBean.selectedTask.createdByName and not taskBean.selectedTask.createdByActive ? 'text-danger fw-bold' : ''}" />
+						    
+						    <h:panelGroup rendered="#{not empty taskBean.selectedTask.createdByName and not taskBean.selectedTask.createdByActive}">
+						        <i class="pi pi-exclamation-triangle text-danger ms-1 tip-inactive-user" />
+						    </h:panelGroup>
+						</div>
+			
+			            <div class="label">Due Date</div>
+			            <div class="value">
+						    <h:outputText value="#{taskBean.selectedTask.formattedDueDate}" 
+						        styleClass="#{(taskBean.selectedTask.status eq 'NEW' or taskBean.selectedTask.status eq 'IN_PROGRESS') 
+						                      and notificationBean.getTimeRemaining(taskBean.selectedTask.dueDate) eq 'Expired' 
+						                      ? 'text-danger fw-bold' : ''}" />
+						</div>
+			
+			            <div class="label">Created At</div>
+			            <div class="value">#{taskBean.selectedTask.formattedCreatedAt}</div>
+	
+						<div class="label">Category</div>
+						<div class="value">
+						    <h:panelGroup rendered="#{empty taskBean.selectedTask.categoryName}">
+						        <span class="badge bg-secondary">None</span>
+						    </h:panelGroup>
+						    
+						    <h:panelGroup rendered="#{not empty taskBean.selectedTask.categoryName}">
+						        <h:outputText value="#{taskBean.selectedTask.categoryName}" />
+						    </h:panelGroup>
+						</div>
+						<p:tooltip for="@(.tip-inactive-user)" 
+						           value="This user is no longer active in the system." 
+						           position="top" />
+			        </div>
+	
+	                <!-- Botones -->
+	                <div class="form-actions-container">
+	                    <p:commandButton id="ok_button" value="Save"
+						                 icon="pi pi-save"
+						                 rendered="#{taskBean.canModifySelectedTask()
+						                            and taskBean.selectedTask.status ne 'COMPLETED'
+						                            and taskBean.selectedTask.status ne 'CANCELLED'}"
+						                 actionListener="#{taskBean.ejecutar()}"
+						                 process="@form"
+						                 oncomplete="if (args &amp;&amp; !args.validationFailed) PF('wdlgViewTask').hide();"
+						                 update=":frm:data :messageBox :notificationContainer"
+						                 styleClass="custom-dlg-btn save-btn" />
+						<p:commandButton id="edit_details_button" 
+						                 value="Edit"
+						                 icon="pi pi-pencil"
+						                 rendered="#{taskBean.canModify(taskBean.selectedTask) 
+						                             and taskBean.selectedTask.status ne 'COMPLETED' 
+						                             and taskBean.selectedTask.status ne 'CANCELLED'}"
+						                 actionListener="#{taskBean.prepareEdit(taskBean.selectedTask)}"
+						                 oncomplete="PF('wdlgViewTask').hide(); PF('wdlgData').show();"
+						                 update=":dlgData"
+						                 styleClass="custom-dlg-btn edit-btn" />	
+	                    <p:commandButton id="cancel_button" value="Cancel"
+						                 icon="pi pi-times-circle"
+	                                     immediate="true"
+	                                     oncomplete="PF('wdlgViewTask').hide();"
+	                                     styleClass="custom-dlg-btn cancel-btn"/>
+	                </div>
+			
+			    </h:panelGroup>
+		    </h:form>
+		</p:dialog>
+    </ui:define>
+</ui:composition>
+</html>

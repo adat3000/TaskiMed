@@ -1,0 +1,905 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+
+<ui:composition template="/WEB-INF/plantilla.xhtml">
+    <f:metadata>
+        <f:viewAction action="#{patientBean.resetFilters}" onPostback="false" />
+    </f:metadata>
+	<ui:define name="contenido">
+		<h:outputStylesheet name="css/datatable-responsive.css" />
+		<style>
+			.view-dialog .ui-dialog-content {
+			    padding: 0 !important;
+			}
+			
+			.view-container {
+			    padding: 20px;
+			    font-family: "Roboto", sans-serif;
+			}
+			
+			.view-title {
+				font-size: 1.25rem;
+				font-weight: 700;
+				color: #007ad9;
+				margin-bottom: 1rem;
+				padding-bottom: 0.5rem;
+				border-bottom: 2px solid #f1f5f9;
+			}
+			
+			.view-title h2 {
+			    font-size: 1.3rem;
+			    margin: 0;
+			    font-weight: 600;
+			}
+			
+			.status-badge {
+			    padding: 4px 10px;
+			    border-radius: 6px;
+			    font-size: 0.8rem;
+			    color: white;
+			    font-weight: 600;
+			    display: inline-block;
+			}
+			
+			/* Colores */
+			.status-badge.new         { background: #6c757d; }
+			.status-badge.in_progress { background: #f0ad4e; color:#222; }
+			.status-badge.completed   { background: #28a745; }
+			.status-badge.cancelled   { background: #dc3545; }
+			
+			.view-grid {
+			    display: grid;
+			    grid-template-columns: 120px 1fr;
+			    row-gap: 10px;
+			    column-gap: 10px;
+			}
+		
+			/* Estilo para los miembros (Chips) en modo View */
+			.member-chip {
+			    display: inline-flex;
+			    align-items: center;
+			    background: #e9ecef;
+			    border: 1px solid #dee2e6;
+			    padding: 4px 10px;
+			    margin: 2px;
+			    border-radius: 16px;
+			    font-size: 0.85rem;
+			    color: #495057;
+			}
+			
+			.label {
+			    font-weight: 600;
+			    color: #555;
+			}
+			
+			.value {
+			    color: #000;
+			}
+			.floating-left-btn {
+			            position: fixed;
+			            left: 25px; /* Lado izquierdo */
+			            bottom: 25px;
+			            z-index: 2000 !important;
+			            background-color: #4caf50; /* Color verde para diferenciarlo */
+			            color: white !important;
+			            width: 55px;
+			            height: 55px;
+			            border-radius: 50%;
+			            display: flex;
+			            align-items: center;
+			            justify-content: center;
+			            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+			            text-decoration: none;
+	        }
+			.badge.rounded-pill {
+			    font-weight: 500;
+			    letter-spacing: 0.3px;
+			    transition: all 0.2s ease;
+			}
+			
+			.badge.rounded-pill:hover {
+			    filter: brightness(90%);
+			}
+			/* Asegura que el panel esté siempre al frente de cualquier menú o tabla */
+			.custom-overlay.ui-overlaypanel {
+			    z-index: 9999 !important;
+			    padding: 0 !important; /* Aprovechar más espacio */
+			    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+			    border: 1px solid #dee2e6;
+			}
+			
+			/* Evita que el contenido interno del panel sea cortado por el propio panel */
+			.custom-overlay .ui-overlaypanel-content {
+			    padding: 10px !important;
+			    overflow: visible !important; 
+			}
+			
+			/* Estilo para el icono de cierre para que siempre sea visible y clicable */
+			.custom-overlay .ui-overlaypanel-close {
+			    background-color: #f8f9fa !important;
+			    color: #212529 !important;
+			    top: -10px !important;
+			    right: -10px !important;
+			    border-radius: 50%;
+			    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+			}
+		    .problem-checkbox-list td {
+		        padding: 5px;
+		    }
+		    .badge .ui-button {
+		        padding: 2px 5px !important;
+		        margin-left: 5px;
+		        background: transparent !important;
+		        border: none !important;
+		    }
+		    .badge .ui-button .ui-icon {
+		        color: white;
+		    }
+		</style>
+		<p:growl id="messageBox" showDetail="true" autoUpdate="true" />
+
+		<h:form id="frm">
+			<div class="container-fluid px-3">
+				<p:outputPanel id="panelData">
+					<div class="table-responsive">
+						<p:dataTable id="data" var="Patient"
+							value="#{patientBean.lazyModel}" widgetVar="tableEntity"
+							paginator="true" lazy="true" rows="10"
+                            paginatorPosition="bottom"
+							rowsPerPageTemplate="5,10,15,25,50"
+							currentPageReportTemplate="{startRecord} - {endRecord} of {totalRecords} records"
+							paginatorTemplate="{CurrentPageReport} {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+							reflow="true" responsiveLayout="scroll"
+							styleClass="table table-hover table-striped table-bordered table-sm datatable-responsive"
+							emptyMessage="No records" sortMode="single"
+							rowKey="#{Patient.id}" selectionMode="single"
+							selection="#{patientBean.selectedPatient}">
+
+							<f:facet name="header">
+								<div
+									class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+
+									<!-- Column Toggler -->
+									<div>
+										<p:commandButton id="toggler" type="button" value="☰"
+											styleClass="btn btn-outline-secondary" />
+										<p:columnToggler datasource="data" trigger="toggler" />
+									</div>
+
+									<div class="me-3">
+										<p:commandButton value="Patients" type="button"
+											style="
+									            padding: 0;
+									            margin: 0;
+									            border: none;
+									            background: transparent;
+									            color: #000000;
+									            font-size: 1.3rem;
+									            font-weight: 700;
+									            border-bottom: 2px solid #007ad9;
+									            box-shadow: none;
+									            cursor: default;
+									        " />
+									</div>
+							        <div class="me-3">
+										<p:commandButton value="Reset Filters" 
+														 icon="pi pi-filter-slash" 
+														 action="#{patientBean.resetFilters()}" 
+														 update="data @form"
+														 process="@this"
+														 styleClass="btn btn-primary"
+														 style="width: auto;" />                                	
+							            
+							        </div>
+									
+									<!-- Buscar -->
+									<div class="d-flex align-items-center flex-nowrap"
+										style="white-space: nowrap;">
+										<p:outputLabel for="globalFilter" value="Search:"
+											styleClass="me-2" />
+										<p:inputText id="globalFilter"
+											placeholder="Enter value to filter" style="max-width: 200px;"
+											onkeypress="if (event.keyCode == 13) { PF('tableEntity').filter(); return false; }" />
+
+										<p:commandButton id="btnBuscar" icon="pi pi-search"
+											styleClass="btn btn-outline-secondary ms-2"
+											onclick="PF('tableEntity').filter(); return false;" />
+									</div>
+
+									<!-- Exportar -->
+									<div>
+										<p:commandButton value="Export to Excel"
+											icon="pi pi-file-excel"
+											styleClass="btn btn-outline-secondary" ajax="false">
+											<p:dataExporter type="xlsx" target="data" fileName="patients"
+												exportHeader="true" exportFooter="true" />
+										</p:commandButton>
+									</div>
+
+									<!-- Botón Nuevo -->
+									<div>
+										<p:commandButton id="btnNuevo" value="New"
+											icon="pi pi-fw pi-plus" styleClass="btn btn-primary"
+											actionListener="#{patientBean.clear()}"
+											oncomplete="PF('wdlgData').show();" update=":dlgData">
+											<f:setPropertyActionListener value="Create"
+												target="#{patientBean.action}" />
+										</p:commandButton>
+									</div>
+
+								</div>
+							</f:facet>
+
+							<!-- Columnas -->
+							<p:column headerText="ID" visible="false" sortBy="#{Patient.id}"
+								field="id" filterBy="#{Patient.id}" filterStyle="display:none">
+								<h:outputLabel value="#{Patient.id}" />
+							</p:column>
+
+							<p:column headerText="MRN" sortBy="#{Patient.mrn}" field="mrn"
+								filterBy="#{Patient.mrn}" filterStyle="display:none">
+								<h:outputLabel value="#{Patient.mrn}" />
+							</p:column>
+
+							<p:column headerText="Patient" sortBy="#{Patient.fullName}"
+								field="fullName" filterBy="#{Patient.fullName}"
+								filterStyle="display:none">
+								<h:outputLabel value="#{Patient.fullName}" />
+							</p:column>
+
+							<p:column headerText="DOB" sortBy="#{Patient.dateOfBirth}"
+								field="dateOfBirth" filterBy="#{Patient.dateOfBirth}"
+								filterStyle="display:none"
+								exportValue="#{Patient.formattedDateOfBirth}">
+								<h:outputText value="#{Patient.formattedDateOfBirth}" />
+							</p:column>
+
+							<p:column headerText="Gender" sortBy="#{Patient.gender}"
+								field="gender" filterBy="#{Patient.gender}"
+								filterStyle="display:none">
+								<h:outputLabel value="#{Patient.gender}" />
+							</p:column>
+
+							<p:column headerText="Phone" sortBy="#{Patient.phoneNumber}"
+								field="phoneNumber" filterBy="#{Patient.phoneNumber}"
+								filterStyle="display:none">
+								<h:outputLabel value="#{Patient.phoneNumber}" />
+							</p:column>
+
+							<p:column headerText="Email" sortBy="#{Patient.email}"
+								field="email" filterBy="#{Patient.email}"
+								filterStyle="display:none">
+								<h:outputLabel value="#{Patient.email}" />
+							</p:column>
+
+							<p:column headerText="Address" sortBy="#{Patient.address}"
+								field="address" filterBy="#{Patient.address}"
+								filterStyle="display:none">
+								<h:outputLabel value="#{Patient.address}" />
+							</p:column>
+
+							<p:column headerText="Problem" width="150">
+							    
+							    <h:panelGroup rendered="#{empty Patient.problems}">
+							        <span class="badge bg-secondary">
+							            <i class="pi pi-list me-1"></i> 0 Patients
+							        </span>
+							    </h:panelGroup>
+							
+							    <h:panelGroup id="problemBadge" rendered="#{not empty Patient.problems}"
+							                  layout="block" 
+							                  styleClass="badge-custom bg-primary text-white">
+							        <i class="pi pi-list me-1"></i> #{Patient.problems.size()} Problems
+							    </h:panelGroup>
+								<p:overlayPanel for="problemBadge" 
+								                widgetVar="ovlProblems_#{Patient.id}"
+								                dismissable="true" 
+								                showEvent="click"
+								                showCloseIcon="true" 
+								                dynamic="true" 
+								                fitViewport="true"
+								                cache="false"
+								                styleClass="custom-overlay"
+								                my="center top"
+								                at="center bottom"
+								                collision="fit">
+								    
+								    <h:form id="frmOvlProblems">
+								        <p:inputText readonly="true" 
+								                     style="position:absolute; opacity:0; height:0; width:0; z-index:-1; border:none;" />
+								
+								        <h:panelGroup id="listProblemsContainer" layout="block" style="height: auto; min-width: 250px;">
+								            <div style="max-height: 600px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 8px;" class="bg-light">
+								                
+								                <p:dataTable id="tblProblems" 
+								                             value="#{Patient.problems.stream().toList()}" 
+								                             var="prob"
+								                             widgetVar="wTblProblems_#{Patient.id}"
+								                             emptyMessage="No problems found"
+								                             rows="7" 
+								                             paginator="true"
+								                             paginatorPosition="bottom"
+								                             paginatorTemplate="{PreviousPageLink} {PageLinks} {NextPageLink}"
+								                             size="small"
+								                             scrollable="true" 
+								                             scrollHeight="auto"
+								                             globalFilterOnly="true"
+								                             styleClass="custom-overlay">
+								
+								                    <f:facet name="header">
+								                        <div class="ui-inputgroup w-100" style="display: flex;">
+								                            <span class="ui-inputgroup-addon">
+								                                <i class="pi pi-search" />
+								                            </span>
+								                            
+								                            <p:inputText id="globalFilter" 
+								                                         placeholder="Search problem..." 
+								                                         styleClass="shadow-none border-secondary"
+								                                         style="flex-grow: 1; border-left: none;"
+								                                         tabindex="-1"
+								                                         onkeypress="if (event.keyCode == 13) { PF('wTblProblems_#{Patient.id}').filter(); return false; }" />
+								                            
+								                            <p:commandButton icon="pi pi-filter" 
+								                                             onclick="PF('wTblProblems_#{Patient.id}').filter()" 
+								                                             type="button"
+								                                             process="@this"
+								                                             styleClass="ui-button-primary" />
+								                        </div>
+								                    </f:facet>
+								
+								                    <p:column filterBy="#{prob.name}" 
+								                              filterMatchMode="contains" 
+								                              styleClass="border-0 p-0">
+								                        
+								                        <div class="p-2 d-flex align-items-center border-bottom bg-white">
+								                            <div class="me-3">
+								                                <i class="pi pi-check-circle text-success" style="font-size: 1.1rem;"></i>
+								                            </div>
+								                            
+								                            <div style="flex-grow: 1;">
+								                                <div class="fw-bold text-dark" style="font-size: 0.85rem;">
+								                                    #{prob.name}
+								                                </div>
+								                                <h:panelGroup rendered="#{not empty prob.id}">
+								                                    <div class="text-muted" style="font-size: 0.7rem;">
+								                                        Alias:
+																        <span class="badge bg-info text-dark">
+																            #{prob.alias}
+																        </span>
+								                                    </div>
+								                                </h:panelGroup>
+								                            </div>
+								                        </div>
+								                    </p:column>
+								                </p:dataTable>
+								
+								                <h:panelGroup rendered="#{empty Patient.problems}" layout="block" class="p-4 text-center text-muted italic">
+								                    <i class="pi pi-info-circle d-block mb-2" style="font-size: 1.5rem;"></i>
+								                    No problems assigned
+								                </h:panelGroup>
+								            </div>
+								        </h:panelGroup>
+								    </h:form>
+								</p:overlayPanel>
+							</p:column>
+
+							<p:column headerText="Created" sortBy="#{Patient.createdAt}"
+								field="createdAt" filterBy="#{Patient.createdAt}"
+								filterStyle="display:none" visible="false"
+								exportValue="#{Patient.formattedCreatedAt}">
+								<h:outputText value="#{Patient.formattedCreatedAt}" />
+							</p:column>
+
+							<p:column headerText="Updated" sortBy="#{Patient.updatedAt}"
+								field="updatedAt" filterBy="#{Patient.updatedAt}"
+								filterStyle="display:none" visible="false"
+								exportValue="#{Patient.formattedUpdatedAt}">
+								<h:outputText value="#{Patient.formattedUpdatedAt}" />
+							</p:column>
+
+							<p:column headerText="View" exportable="false">
+							    <p:commandButton icon="pi pi-eye"
+							                     update=":dlgViewPatient"
+							                     oncomplete="PF('wdlgViewPatient').show();"
+							                     process="@this"
+							                     styleClass="ui-button-flat ui-button-plain"
+							                     style="color: #007bff;}">
+							        <f:setPropertyActionListener value="#{Patient}" target="#{patientBean.selectedPatient}" />
+							        <f:setPropertyActionListener value="Update" target="#{patientBean.action}" />
+							    </p:commandButton>
+							</p:column>
+
+							<p:column headerText="Delete" exportable="false">
+								<p:commandButton icon="pi pi-trash"
+									action="#{patientBean.delete}" update=":frm:data, :messageBox"
+									process="@this" data-pfconfirmcommand="true">
+									<p:confirm header="Confirmation"
+										message="Do you want to delete?"
+										icon="pi pi-exclamation-triangle" />
+									<f:setPropertyActionListener value="#{Patient}"
+										target="#{patientBean.selectedPatient}" />
+								</p:commandButton>
+							</p:column>
+						</p:dataTable>
+					</div>
+				</p:outputPanel>
+			</div>
+
+			<p:confirmDialog global="true" showEffect="fade" hideEffect="fade">
+				<p:commandButton value="Yes" type="button"
+					styleClass="ui-confirmdialog-yes" icon="pi pi-check" />
+				<p:commandButton value="No" type="button"
+					styleClass="ui-confirmdialog-no ui-button-flat" icon="pi pi-times" />
+			</p:confirmDialog>
+		</h:form>
+
+		<!-- Diálogo de Nuevo/Editar -->
+		<p:dialog id="dlgData" widgetVar="wdlgData" resizable="true"
+			modal="true" appendTo="@(body)" closeOnEscape="true"
+			responsive="true" style="max-width: 100vw; overflow-x: hidden;"
+			header="#{patientBean.action eq 'Update' ? 'Patient Info' : 'New Patient'}">
+
+			<h:form id="frmNewEdit">
+				<p:outputPanel id="panelNewEdit"
+					style="overflow-y:auto; max-height:70vh; overflow-x:hidden;">
+					<div class="mx-auto px-3" style="max-width: 800px; width: 100%;">
+						<div class="card mt-3">
+							<div class="card-header bg-primary text-white">Patient
+								Details</div>
+							<div class="card-body">
+								<div class="row">
+									<ui:fragment
+										rendered="#{not empty patientBean.selectedPatient.id}">
+										<div class="col-md-6 mb-3">
+											<p>
+												<strong>ID:</strong>
+												<p:inputText id="codigo"
+													value="#{patientBean.selectedPatient.id}" readonly="true"
+													styleClass="form-control ui-state-disabled" />
+											</p>
+										</div>
+									</ui:fragment>
+
+									<div class="col-md-6 mb-3">
+										<p>
+											<strong>MRN:</strong>
+											<p:inputText id="mrn"
+												value="#{patientBean.selectedPatient.mrn}" required="true"
+												styleClass="form-control" />
+										</p>
+									</div>
+
+									<div class="col-md-6 mb-3">
+										<p>
+											<strong>First Name:</strong>
+											<p:inputText id="firstName"
+												value="#{patientBean.selectedPatient.firstName}"
+												required="true" styleClass="form-control" />
+										</p>
+									</div>
+
+									<div class="col-md-6 mb-3">
+										<p>
+											<strong>Last Name:</strong>
+											<p:inputText id="lastName"
+												value="#{patientBean.selectedPatient.lastName}"
+												required="true" styleClass="form-control" />
+										</p>
+									</div>
+
+									<div class="col-md-6 mb-3">
+										<p>
+											<strong>Date of Birth:</strong>
+										</p>
+										<p:calendar id="entryDate"
+											value="#{patientBean.selectedPatient.dateOfBirth}"
+											pattern="MM/dd/yyyy" required="true" showIcon="true"
+											navigator="true" yearRange="1900:#{patientBean.currentYear}"
+											showButtonPanel="true" appendTo="@body"
+											styleClass="form-control"
+											placeholder="Choose a date of birth" />
+									</div>
+
+									<div class="col-md-6 mb-3">
+										<p>
+											<strong>Gender:</strong>
+											<p:selectOneRadio id="gender"
+												value="#{patientBean.selectedPatient.gender}">
+												<f:selectItem itemLabel="Male" itemValue="Male" />
+												<f:selectItem itemLabel="Female" itemValue="Female" />
+											</p:selectOneRadio>
+										</p>
+									</div>
+
+									<div class="col-md-6 mb-3">
+										<p>
+											<strong>Phone Number:</strong>
+											<p:inputMask id="phoneNumber" value="#{patientBean.selectedPatient.phoneNumber}"
+														mask="(999) 999-9999" validateMask="true" styleClass="form-control"
+														autoClear="false" slotChar="_" />
+										</p>
+									</div>
+
+									<div class="col-md-6 mb-3">
+										<p>
+											<strong>Email:</strong>
+											<p:inputText id="email"
+												value="#{patientBean.selectedPatient.email}"
+												styleClass="form-control" required="true"
+												requiredMessage="Email is required">
+
+												<p:ajax event="blur" update="emailMsg" process="@this"
+													listener="#{patientBean.validateEmail}" />
+											</p:inputText>
+
+											<p:message id="emailMsg" for="email" display="text" />
+										</p>
+									</div>
+
+									<div class="col-md-6 mb-3">
+										<p>
+											<strong>Address:</strong>
+											<p:inputText id="address"
+												value="#{patientBean.selectedPatient.address}"
+												styleClass="form-control" />
+										</p>
+									</div>
+
+									<!-- NUEVO: Problems Section simplificada -->
+									<div class="col-md-12 mb-3">
+									    <p:outputPanel id="problemsContainer">
+									        <p>
+									            <strong>Health Problems / Diseases:</strong>
+									        </p>
+									        
+											<p:accordionPanel id="problemsAccordion" activeIndex="0" style="margin: 10px 0 0 0; padding: 0;">
+											    
+												<p:tab title="Selected Problems (#{patientBean.selectedProblemIds.size()})">
+												    <div style="margin: 0; padding: 0px;">
+												        <p:outputPanel id="selectedListWrapper">
+												            <p:dataList id="selectedProblemsList"
+												                        value="#{patientBean.selectedPatientProblems}" 
+												                        var="problem"
+												                        type="none"
+												                        rows="8"
+												                        paginator="true"
+												                        paginatorPosition="bottom"
+												                        emptyMessage="No problems selected for this patient.">
+												                
+												                <div class="d-flex align-items-center p-2 mb-2 border-start border-4 border-info shadow-sm"
+												                     style="background: #f8f9fa; gap: 10px;">
+												                    
+												                    <span class="fw-bold flex-grow-1 text-truncate" title="#{problem.name}">
+												                        #{problem.name}
+												                    </span>
+												                    
+												                    <div class="flex-shrink-0">
+												                        <p:commandButton icon="pi pi-trash" 
+												                                         styleClass="ui-button-danger ui-button-flat"
+												                                         process="@this"
+												                                         update=":frmNewEdit:problemsContainer"
+												                                         actionListener="#{patientBean.removeProblem(problem.id)}"
+												                                         title="Remove from patient">
+												                        </p:commandButton>
+												                    </div>
+												                </div>
+												            </p:dataList>
+												        </p:outputPanel>
+												    </div>
+												</p:tab>
+											    
+											    <p:tab title="Choose Problems (#{patientBean.availableProblems.size()})">
+											        <div style="margin: 0; padding: 0px;">
+											            <p:outputPanel id="availableWrapper">
+											                <div class="d-flex gap-2 mb-3">
+											                    <p:inputText id="searchProbInput"
+											                                 value="#{patientBean.problemSearchText}" 
+											                                 placeholder="Search available problems..." 
+											                                 styleClass="form-control flex-grow-1" />
+											                    <p:commandButton icon="pi pi-search" 
+											                                     process="@this searchProbInput" 
+											                                     update="availableProblemsList availableTitle"
+											                                     styleClass="ui-button-info" 
+											                                     title="Filter list" />
+											                </div>
+											
+											                <p:dataList id="availableProblemsList"
+											                            value="#{patientBean.filteredProblems.stream().filter(p -> !patientBean.selectedProblemIds.contains(p.id)).toList()}" 
+											                            var="p"
+											                            type="none"
+											                            rows="8"
+											                            paginator="true"
+											                            paginatorPosition="bottom"
+											                            emptyMessage="No more problems available to add.">
+											                    
+											                    <div class="d-flex justify-content-between align-items-center p-2 border-bottom shadow-sm-hover mb-1" 
+											                         style="background: #ffffff; border-radius: 4px;">
+											                        <span>#{p.name}</span>
+											                        <p:commandLink actionListener="#{patientBean.addProblem(p.id)}"
+											                                       process="@this"
+											                                       update=":frmNewEdit:problemsContainer"
+											                                       styleClass="text-success"
+											                                       title="Add to patient">
+											                            <i class="pi pi-plus-circle" style="font-size: 1.3rem;"></i>
+											                        </p:commandLink>
+											                    </div>
+											                </p:dataList>
+											            </p:outputPanel>
+											
+											            <div class="d-flex gap-2 mt-3" style="border-top: 1px solid #dee2e6; padding-top: 15px;">
+											                <p:inputText id="newProbName"
+											                             value="#{patientBean.newProblemName}"
+											                             placeholder="Create and add new problem..."
+											                             styleClass="form-control flex-grow-1" />
+											                <p:commandButton id="quickAddBtn" 
+											                                 value="Quick Create" icon="pi pi-bolt"
+											                                 actionListener="#{patientBean.quickAddProblem()}"
+											                                 process="@this newProbName"
+											                                 update=":frmNewEdit:problemsContainer"
+											                                 styleClass="ui-button-success" />
+											            </div>
+											        </div>
+											    </p:tab>
+											</p:accordionPanel>
+									    </p:outputPanel>
+									</div>
+
+								</div>
+							</div>
+						</div>
+
+						<!-- Botones -->
+						<div class="col-12 d-flex justify-content-center gap-3 mt-3">
+							<p:commandButton id="ok_button" value="Save"
+								actionListener="#{patientBean.ejecutar()}" process="@form"
+								oncomplete="if (args &amp;&amp; !args.validationFailed) PF('wdlgData').hide();"
+								update=":frmNewEdit:panelNewEdit :frm:panelData :messageBox"
+								styleClass="btn btn-primary" />
+
+							<p:commandButton id="cancel_button" value="Cancel"
+								immediate="true" oncomplete="PF('wdlgData').hide();"
+								styleClass="btn btn-secondary">
+								<p:ajax update="panelNewEdit" resetValues="true" />
+							</p:commandButton>
+
+							<p:defaultCommand target="ok_button" />
+						</div>
+					</div>
+				</p:outputPanel>
+			</h:form>
+		</p:dialog>
+		<p:dialog id="dlgViewPatient"
+				  widgetVar="wdlgViewPatient"
+				  onShow="PF('wTabView').select(0);"
+				  modal="true"
+				  header="Patient Details"
+				  responsive="true"
+				  resizable="true"
+				  styleClass="view-dialog"
+				  showEffect="fade" hideEffect="fade"
+				  width="370px">
+			<h:form id="frmViewPatient">   <!-- ← FORM OBLIGATORIO -->
+			
+				<h:panelGroup id="panelViewPatient" layout="block" styleClass="view-container">
+			
+					<p:tabView id="tabView" widgetVar="wTabView">
+						<f:facet name="actions">
+							Global actions
+						</f:facet>
+						<p:tab title="Information">
+							<f:facet name="actions">
+								Page 1/2
+							</f:facet>
+							<!-- Sección de Título -->
+							<div class="view-title">
+								#{patientBean.selectedPatient.firstName} #{patientBean.selectedPatient.lastName}
+							</div>
+					
+							<!-- Sección de Detalles -->
+							<div class="view-grid">
+								<div class="label">Patient ID</div>
+								<div class="value">#{patientBean.selectedPatient.id}</div>
+							</div>
+		
+							<div class="view-grid">
+								<div class="label">MRN</div>
+								<div class="value">#{patientBean.selectedPatient.mrn}</div>
+							</div>
+		
+							<div class="view-grid">
+								<div class="label">Date of Birth</div>
+								<div class="value">#{patientBean.selectedPatient.formattedDateOfBirth}</div>
+							</div>
+		
+							<div class="view-grid">
+								<div class="label">Gender</div>
+								<div class="value">#{patientBean.selectedPatient.gender}</div>
+							</div>
+		
+							<div class="view-grid">
+								<div class="label">Phone Number</div>
+								<div class="value">#{patientBean.selectedPatient.phoneNumber}</div>
+							</div>
+		
+							<div class="view-grid">
+								<div class="label">Email</div>
+								<div class="value">#{patientBean.selectedPatient.email}</div>
+							</div>
+		
+							<div class="view-grid">
+								<div class="label">Address</div>
+								<div class="value">#{patientBean.selectedPatient.address}</div>
+							</div>
+		
+							<div class="view-grid">
+								<div class="label">Created At</div>
+								<div class="value">#{patientBean.selectedPatient.formattedCreatedAt}</div>
+							</div>
+		
+							<div class="view-grid">
+								<div class="label">Updated At</div>
+								<div class="value">#{patientBean.selectedPatient.formattedUpdatedAt}</div>
+							</div>
+						</p:tab>
+						<p:tab>
+							<f:facet name="actions">
+								Page 2/2
+							</f:facet>
+							<f:facet name="title">
+								<span>Problems</span>&nbsp;<p:badge value="#{patientBean.selectedPatient.problems.size()}" severity="danger" class="ml-1"></p:badge>
+							</f:facet>
+							<p:dataTable id="tblProblems" 
+										 value="#{patientBean.selectedPatient.problems.stream().toList()}" 
+										 var="prob"
+										 widgetVar="wTblProblems_#{Patient.id}"
+										 emptyMessage="No problems found"
+										 rows="7" 
+										 paginator="true"
+										 paginatorPosition="bottom"
+										 paginatorTemplate="{PreviousPageLink} {PageLinks} {NextPageLink}"
+										 size="small"
+										 scrollable="true" 
+										 scrollHeight="200"
+										 globalFilterOnly="true"
+										 styleClass="custom-overlay">
+			
+								<f:facet name="header">
+									<div class="ui-inputgroup w-100" style="display: flex;">
+										<span class="ui-inputgroup-addon">
+											<i class="pi pi-search" />
+										</span>
+										
+										<p:inputText id="globalFilter" 
+													 placeholder="Search problem..." 
+													 styleClass="shadow-none border-secondary"
+													 style="flex-grow: 1; border-left: none;"
+													 tabindex="-1"
+													 onkeypress="if (event.keyCode == 13) { PF('wTblProblems_#{Patient.id}').filter(); return false; }" />
+										
+										<p:commandButton icon="pi pi-filter" 
+														 onclick="PF('wTblProblems_#{Patient.id}').filter()" 
+														 type="button"
+														 process="@this"
+														 styleClass="ui-button-primary" />
+									</div>
+								</f:facet>
+			
+								<p:column filterBy="#{prob.name}" 
+										  filterMatchMode="contains" 
+										  styleClass="border-0 p-0">
+									
+									<div class="p-2 d-flex align-items-center border-bottom bg-white">
+										<div class="me-3">
+											<i class="pi pi-check-circle text-success" style="font-size: 1.1rem;"></i>
+										</div>
+										
+										<div style="flex-grow: 1;">
+											<div class="fw-bold text-dark" style="font-size: 0.85rem;">
+												#{prob.name}
+												<span class="badge bg-info text-dark">
+													#{prob.alias}
+												</span>
+											</div>
+										</div>
+									</div>
+								</p:column>
+							</p:dataTable>
+			
+							<h:panelGroup rendered="#{empty patientBean.selectedPatient.problems}" layout="block" class="p-4 text-center text-muted italic">
+								<i class="pi pi-info-circle d-block mb-2" style="font-size: 1.5rem;"></i>
+								No problems assigned
+							</h:panelGroup>
+						</p:tab>
+					</p:tabView>
+					<!-- Botones -->
+					<div class="form-actions-container">
+							<p:commandButton id="edit_details_button" 
+										 value="Edit"
+										 icon="pi pi-pencil"
+										 actionListener="#{patientBean.prepareEdit(patientBean.selectedPatient)}"
+										 process="@this"
+										 update=":frmNewEdit:problems :dlgData"
+										 oncomplete="PF('wdlgViewPatient').hide(); PF('wdlgData').show();"
+										 styleClass="custom-dlg-btn edit-btn" />	
+		
+						<p:commandButton id="cancel_button" value="Cancel"
+										 immediate="true"
+										 oncomplete="PF('wdlgViewPatient').hide();"
+										 styleClass="custom-dlg-btn cancel-btn"/>
+					</div>
+			
+				</h:panelGroup>
+			</h:form>
+		</p:dialog>
+	    <p:commandLink id="btnLeftPanel" 
+	                   type="button"
+	                   onclick="PF('sidebarLeft').toggle()"
+	                   styleClass="floating-left-btn"
+	                   process="@this"
+	                   global="false">
+	        <i class="pi pi-filter" style="font-size: 1.8rem;"></i>
+	    </p:commandLink>
+	
+		<p:sidebar widgetVar="sidebarLeft" 
+		           position="left" 
+		           styleClass="settings-sidebar"
+		           appendTo="@(body)"
+		           style="width: 576px">
+		    
+		    <h:form id="frmSidebar">
+		        <div class="p-3">
+		            <div class="mb-4">
+		                <p:outputLabel for="problemListSidebar" value="Select a Problem" styleClass="fw-bold mb-2 d-block"/>
+		                
+		                <p:selectOneListbox id="problemListSidebar" value="#{problemBean.selectedProblem}"
+		                                    converter="omnifaces.SelectItemsConverter" var="p_item"
+		                                    filter="true" filterMatchMode="contains"
+		                                    style="width:100%;" scrollHeight="500">
+		                    
+		                    <f:selectItems value="#{problemBean.problems}" 
+		                                   var="prob" itemValue="#{prob}" 
+		                                   itemLabel="#{prob.name} #{prob.alias}" />
+		
+		                    <p:ajax event="valueChange" 
+		                            update=":frm:data"
+		                            process="@this"
+		                            listener="#{patientBean.onProblemSelectChange(problemBean.selectedProblem)}" 
+		                            oncomplete="PF('tableEntity').filter();" />
+		                    
+		                    <p:column>
+		                        <h:outputText value="#{p_item.name}" />
+		                    </p:column>
+						
+							<p:column style="text-align: center;">
+							    <h:panelGroup rendered="#{empty p_item.alias}">
+							        <span class="badge bg-secondary">None</span>
+							    </h:panelGroup>
+							
+							    <h:panelGroup rendered="#{not empty p_item.alias}">
+								    <span class="badge bg-info text-black">
+								        #{p_item.alias}
+								    </span>
+								</h:panelGroup>
+							</p:column>
+		                </p:selectOneListbox>
+		            </div>
+		
+		            <div class="mb-4">
+		                <p:commandButton value="Reset Filters" 
+		                                 icon="pi pi-filter-slash" 
+		                                 action="#{patientBean.resetFilters()}" 
+		                                 update=":frm:data @form"
+		                                 process="@this"
+		                                 styleClass="ui-button-outlined w-100" />
+		            </div>
+		        </div>
+		    </h:form>
+		</p:sidebar>
+	</ui:define>
+</ui:composition>
+</html>

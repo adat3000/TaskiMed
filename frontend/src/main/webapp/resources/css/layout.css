@@ -1,0 +1,263 @@
+@charset "UTF-8";
+/* Barra de navegación fija arriba */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1100; /* más alto que el mobileMenu */
+}
+
+/* El menú móvil también fijo debajo de la navbar */
+#mobileMenu {
+    display: none;
+    position: fixed;
+    top: 50px;
+    left: 0;
+    right: 0;
+    z-index: 1050;
+    background-color: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    padding: 1rem;
+}
+
+.dropdown-menu {
+    z-index: 1100 !important; /* Mayor que #mobileMenu */
+}
+
+@media screen and (max-width: 991px) {
+    #desktopMenu {
+        display: none;
+    }
+    #mobileMenuToggle {
+        display: block;
+    }
+    #mobileMenu.active {
+        display: block;
+    }
+}
+
+@media screen and (min-width: 992px) {
+    #mobileMenuToggle {
+        display: none;
+    }
+}
+
+/* Compensar la altura de la navbar fija */
+.content-area {
+    padding: 80px 16px 16px 16px;  /* 80px arriba, 16px en los otros lados */
+}
+/* Ajustes adicionales para tablas y textos */
+.ui-datatable td, 
+.ui-datatable th, 
+.ui-datatable .ui-column-title, 
+.ui-outputlabel, 
+.ui-datatable label, 
+.ui-datatable p {
+    line-height: 1.6 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+/* En tu hoja de estilos o dentro de h:outputStylesheet */
+.ui-datatable table {
+    table-layout: auto !important;
+}
+
+.row-grey {
+	background-color: #dce7ff !important;
+}
+.error-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background-color: #f8f9fa;
+}
+.error-box {
+    max-width: 600px;
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+}
+/* Soluciona el problema de calendario detrás del diálogo */
+.ui-datepicker {
+    z-index: 999999 !important;
+}
+
+/* Ajusta el tamaño del calendario dentro del diálogo */
+.ui-datepicker.ui-widget {
+    font-size: 13px !important;
+    transform: scale(0.9); /* opcional: reduce visualmente el tamaño */
+    transform-origin: top center;
+}
+
+
+/* Contenedor central */
+.form-actions-container {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 15px !important;
+    margin-top: 20px !important;
+    width: 100% !important;
+    clear: both;
+}
+
+/* Botón base personalizado (Sin clases btn de Bootstrap) */
+body .ui-button.custom-dlg-btn {
+    width: 120px !important;
+    height: 38px !important;
+    border: none !important;
+    border-radius: 5px !important;
+    font-weight: 600 !important;
+    transition: opacity 0.2s !important;
+}
+
+/* Variantes de color manuales */
+body .ui-button.custom-dlg-btn.save-btn {
+    background-color: #0d6efd !important; /* Azul */
+    color: white !important;
+}
+
+body .ui-button.custom-dlg-btn.edit-btn {
+    background-color: #ffc107 !important; /* Amarillo */
+    color: #212529 !important;
+}
+
+body .ui-button.custom-dlg-btn.cancel-btn {
+    background-color: #6c757d !important; /* Gris */
+    color: white !important;
+}
+
+/* Ajuste de iconos y texto interno */
+body .ui-button.custom-dlg-btn .ui-button-text {
+    padding: 0 5px !important;
+    font-size: 14px !important;
+}
+
+body .ui-button.custom-dlg-btn .ui-icon {
+    color: inherit !important;
+}
+
+
+/* Contenedor del icono para posicionar el badge */
+.notif-container {
+    position: relative;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* El círculo rojo con el número */
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -8px;
+    background-color: #dc3545;
+    color: white;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: bold;
+    border: 1px solid white;
+}
+
+/* Animación opcional para que la campana llame la atención */
+.pi-bell {
+    animation: ring 4s .7s ease-in-out infinite;
+    transform-origin: 50% 4px;
+}
+
+@keyframes ring {
+    0% { transform: rotate(0); }
+    1% { transform: rotate(30deg); }
+    3% { transform: rotate(-28deg); }
+    5% { transform: rotate(34deg); }
+    7% { transform: rotate(-32deg); }
+    9% { transform: rotate(0); }
+    100% { transform: rotate(0); }
+}
+
+/* Botón de engranaje circular */
+.floating-settings-btn {
+    position: fixed;
+    right: 25px;
+    bottom: 25px;
+    /* Un nivel más arriba que el sidebar (1030) y su máscara (1040) */
+    z-index: 1060 !important; 
+    background-color: #2196f3;
+    color: white !important;
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.floating-settings-btn i {
+    font-size: 1.8rem;
+}
+
+.floating-settings-btn:hover {
+    background-color: #1976d2;
+    transform: rotate(45deg);
+}
+
+/* Estilo del Sidebar */
+.settings-sidebar {
+    width: 576px !important;
+    background-color: #f8f9fa !important;
+    z-index: 1050 !important; /* Sidebar justo debajo del botón */
+}
+
+/* Máscara de fondo de PrimeFaces */
+.ui-sidebar-mask {
+    z-index: 1040 !important; 
+}
+
+.sidebar-header h4 {
+    margin: 0;
+    color: #333;
+    font-weight: 600;
+}
+
+/* Ajuste responsive para móviles */
+@media (max-width: 576px) {
+    .settings-sidebar {
+        width: 100% !important;
+    }
+    .floating-settings-btn {
+        width: 45px;
+        height: 45px;
+        right: 15px;
+        bottom: 15px;
+    }
+}
+
+/* Badge personalizado para Tablas y Sidebars */
+.badge-custom {
+    cursor: pointer;
+    padding: 0.2em 0.65em !important;
+    font-size: 0.75em !important;
+    font-weight: bold !important;
+    line-height: 1.2 !important;
+    display: inline-block !important;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 5rem !important; /* Equivalente a rounded-pill */
+}
+
+/* Opcional: Un pequeño efecto hover para indicar que es clickeable */
+.badge-custom:hover {
+    filter: brightness(90%);
+    transition: filter 0.2s ease;
+}

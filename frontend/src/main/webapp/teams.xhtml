@@ -1,0 +1,523 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui">
+
+<ui:composition template="/WEB-INF/plantilla.xhtml">
+    <ui:define name="contenido">
+		<style>
+			/* --- 1. GESTIÓN DE RESPONSIVIDAD (DIÁLOGO) --- */
+			
+			/* Ancho para escritorio */
+			.responsive-dialog {
+				width: 850px !important;
+				max-width: 95vw;
+			}
+		
+			/* Ajuste para Tablets y Laptops pequeñas */
+			@media (max-width: 992px) {
+				.responsive-dialog {
+					width: 750px !important;
+				}
+			}
+		
+			/* Ajuste para Smartphones */
+			@media (max-width: 768px) {
+				.responsive-dialog {
+					width: 95% !important;
+					height: auto !important;
+					/* Ajuste para que aparezca DEBAJO de la barra de menú (aprox 60px-70px) */
+					top: 70px !important; 
+					margin-top: 10px !important;
+				}
+				
+				/* Reset de márgenes de Bootstrap en móvil */
+				.responsive-dialog .row {
+					margin-right: 0 !important;
+					margin-left: 0 !important;
+				}
+		
+				.responsive-dialog [class*="col-"] {
+					padding-right: 8px !important;
+					padding-left: 8px !important;
+				}
+		
+				/* Sección superior compacta */
+				.border-end-md {
+					border-right: none !important;
+					border-bottom: 1px solid #dee2e6;
+					padding-bottom: 0.5rem !important;
+					margin-bottom: 0.8rem !important;
+					padding-top: 0 !important;
+				}
+		
+				/* Reducción de márgenes entre campos de entrada */
+				.responsive-dialog .field {
+					margin-bottom: 0.2rem !important; 
+				}
+				
+				/* ELIMINAR ESPACIO DE MENSAJES VACÍOS */
+				/* PrimeFaces renderiza un div aunque no haya texto. Lo colapsamos: */
+				.responsive-dialog .ui-message:not(.ui-message-error):not(.ui-message-info) {
+					display: none !important;
+				}
+				
+				.responsive-dialog .ui-message-error {
+					margin: 2px 0 !important;
+					padding: 2px 4px !important;
+					font-size: 0.75rem !important;
+					display: block !important;
+				}
+		
+				.mobile-hide {
+					display: none !important;
+				}
+				
+				/* Scroll interno si el contenido supera el alto del dispositivo */
+				.responsive-dialog .ui-dialog-content {
+					max-height: 75vh !important;
+					overflow-y: auto !important;
+					padding: 0.5rem !important; 
+				}
+			}
+		
+			/* Borde vertical solo en Desktop (min-width: 769px) */
+			@media (min-width: 769px) {
+				.border-end-md {
+					border-right: 1px solid #dee2e6 !important;
+				}
+			}
+		
+			/* --- 2. ESTILOS DE COMPONENTES INTERNOS --- */
+		
+			.responsive-dialog .ui-dialog-content {
+				padding: 0 !important;
+			}
+		
+			.custom-filter-list {
+				border-radius: 8px !important;
+				border: 1px solid #ced4da !important;
+			}
+		
+			.custom-filter-list .ui-selectlistbox-item {
+				padding: 10px !important;
+				border-bottom: 1px solid #f8f9fa;
+			}
+		
+			/* Estilo para los miembros (Chips) en modo View */
+			.member-chip {
+			    display: inline-flex;
+			    align-items: center;
+			    background: #e9ecef;
+			    border: 1px solid #dee2e6;
+			    padding: 4px 10px;
+			    margin: 2px;
+			    border-radius: 16px;
+			    font-size: 0.85rem;
+			    color: #495057;
+			}
+			
+			.member-chip.inactive-member {
+			    background: #fff5f5;
+			    border-color: #feb2b2;
+			    color: #c53030; /* Rojo oscuro para el texto */
+			    font-weight: 600;
+			}
+		
+			.label {
+				font-weight: 700;
+				color: #334155;
+				font-size: 0.9rem;
+			}
+		
+			.value {
+				color: #1e293b;
+			}
+		
+			/* Estilos para el diálogo de Vista */
+			.view-container {
+				padding: 20px;
+			}
+		
+			.view-title {
+				font-size: 1.25rem;
+				font-weight: 700;
+				color: #007ad9;
+				margin-bottom: 1rem;
+				padding-bottom: 0.5rem;
+				border-bottom: 2px solid #f1f5f9;
+			}
+		
+			.view-grid {
+				display: flex;
+				justify-content: space-between;
+				margin-bottom: 0.75rem;
+			}
+		
+			/* Utilitarios */
+			.bg-light { background-color: #f8f9fa !important; }
+			.border-round { border-radius: 8px !important; }
+			.font-bold { font-weight: 700 !important; }
+			.italic { font-style: italic; }
+		</style>
+        <p:growl id="messageBox" showDetail="true" autoUpdate="true" />
+
+        <h:form id="frm">
+            <div class="container-fluid px-3">
+                <p:outputPanel id="panelData">
+                    <div class="table-responsive">
+                        <p:dataTable id="data"
+                                     var="Team"
+                                     caption="Team"
+                                     value="#{teamBean.lazyModel}"
+                                     widgetVar="tableEntity"
+                                     paginator="true"
+                                     paginatorPosition="bottom"
+                                     lazy="true"
+                                     rows="10"
+                                     rowsPerPageTemplate="5,10,15,25,50"
+                                     currentPageReportTemplate="{startRecord} - {endRecord} of {totalRecords} records"
+                                     paginatorTemplate="{CurrentPageReport} {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                                     reflow="true"
+                                     responsiveLayout="scroll"
+                                     styleClass="table table-hover table-striped table-bordered table-sm"
+                                     emptyMessage="No records"
+                                     sortMode="single"
+                                     rowKey="#{Team.id}"
+                                     selectionMode="single"
+                                     selection="#{teamBean.selectedTeam}">
+
+                            <f:facet name="header">
+                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+
+                                    <!-- Column Toggler -->
+                                    <div>
+                                        <p:commandButton id="toggler" type="button" value="☰" styleClass="btn btn-outline-secondary" />
+                                        <p:columnToggler datasource="data" trigger="toggler" />
+                                    </div>
+
+									<div class="me-3">
+									    <p:commandButton value="Teams" type="button"
+									        style="
+									            padding: 0;
+									            margin: 0;
+									            border: none;
+									            background: transparent;
+									            color: #000000;
+									            font-size: 1.3rem;
+									            font-weight: 700;
+									            border-bottom: 2px solid #007ad9;
+									            box-shadow: none;
+									            cursor: default;
+									        " />
+									</div>
+
+                                    <!-- Buscar -->
+                                    <div class="d-flex align-items-center flex-nowrap" style="white-space: nowrap;">
+                                        <p:outputLabel for="globalFilter" value="Search:" styleClass="me-2" />
+                                        <p:inputText id="globalFilter"
+                                                     placeholder="Enter value to filter"
+                                                     style="max-width: 200px;"
+                                                     onkeypress="if (event.keyCode == 13) { PF('tableEntity').filter(); return false; }" />
+
+                                        <p:commandButton id="btnBuscar"
+                                                         icon="pi pi-search"
+                                                         styleClass="btn btn-outline-secondary ms-2"
+                                                         onclick="PF('tableEntity').filter(); return false;" />
+                                    </div>
+
+                                    <!-- Exportar -->
+                                    <div>
+                                        <p:commandButton value="Export to Excel" icon="pi pi-file-excel"
+                                                         styleClass="btn btn-outline-secondary"
+                                                         ajax="false">
+                                            <p:dataExporter type="xlsx"
+                                                            target="data"
+                                                            fileName="teams"
+                                                            exportHeader="true"
+                                                            exportFooter="true" />
+                                        </p:commandButton>
+                                    </div>
+
+                                    <!-- Botón Nuevo -->
+                                    <div>
+                                        <p:commandButton id="btnNuevo" value="New" icon="pi pi-fw pi-plus"
+                                                         styleClass="btn btn-primary"
+                                                         rendered="#{loginBean.admin}"
+                                                         actionListener="#{teamBean.clear()}"
+                                                         oncomplete="PF('wdlgData').show();"
+                                                         update=":dlgData">
+                                            <f:setPropertyActionListener value="Create" target="#{teamBean.action}" />
+                                        </p:commandButton>
+                                    </div>
+
+                                </div>
+                            </f:facet>
+
+                            <!-- Columnas -->
+                            <p:column headerText="ID" visible="false" sortBy="#{Team.id}" field="id" filterBy="#{Team.id}" filterStyle="display:none">
+                                <h:outputLabel value="#{Team.id}" />
+                            </p:column>
+
+                            <p:column headerText="Team" sortBy="#{Team.name}" field="name" filterBy="#{Team.name}" filterStyle="display:none">
+                                <h:outputLabel value="#{Team.name}" />
+                            </p:column>
+
+                            <p:column headerText="Alias" sortBy="#{Team.alias}" field="alias" filterBy="#{Team.alias}" filterStyle="display:none">
+						        <span class="badge bg-info text-dark">
+						        	#{Team.alias}
+						        </span>
+                            </p:column>
+
+							<p:column headerText="Members" width="200" class="text-start ps-3">
+							    <ui:param name="members" value="#{teamBean.getMembersByTeam(Team.id)}" />
+							    
+							    <h:panelGroup rendered="#{empty members}">
+							        <span class="badge bg-secondary">
+							            <i class="pi pi-users me-1"></i> 0
+							        </span>
+							    </h:panelGroup>
+							
+							    <h:panelGroup id="teamBadge" rendered="#{not empty members}"
+							                  layout="block" 
+							                  style="cursor:pointer"
+							                  styleClass="badge bg-info text-dark">
+							        <i class="pi pi-users me-1"></i> #{members.size()}
+							    </h:panelGroup>
+							
+							    <p:overlayPanel for="teamBadge" 
+							                    dismissable="true" 
+							                    showEvent="click"
+							                    showCloseIcon="true" 
+							                    style="width:250px"
+							                    my="center top"
+							                    at="center bottom">
+							        
+							        <div class="p-2 border-bottom bg-light fw-bold mb-2">
+							            <i class="pi pi-users me-2"></i>
+							            #{Team.name}
+							        </div>
+							        
+							        <ul class="list-group list-group-flush">
+							            <ui:repeat value="#{members}" var="user">
+							                <li class="list-group-item d-flex align-items-center p-2 text-start">
+							                    <i class="pi pi-user #{user.active ? 'text-info' : 'text-danger'} me-2"></i>
+							                    <span class="#{user.active ? '' : 'text-danger fw-bold'}">
+							                        #{user.firstName} #{user.lastName} #{user.active ? '' : '(Inactive)'}
+							                    </span>
+							                </li>
+							            </ui:repeat>
+							        </ul>
+							    </p:overlayPanel>
+							</p:column>
+
+							<p:column headerText="View" exportable="false">
+							    <p:commandButton icon="pi pi-eye"
+							                     update=":dlgViewTeam"
+							                     oncomplete="PF('wdlgViewTeam').show();"
+							                     process="@this"
+							                     styleClass="ui-button-flat ui-button-plain"
+							                     style="#{teamBean.canModify() ? 'color: #007bff;' : 'color: #495057; font-weight: bold;'}">
+							        <f:setPropertyActionListener value="#{Team}" target="#{teamBean.selectedTeam}" />
+							        <f:setPropertyActionListener value="Update" target="#{teamBean.action}" />
+							    </p:commandButton>
+							</p:column>
+
+                            <p:column headerText="Delete" exportable="false" rendered="#{loginBean.admin}">
+                                <p:commandButton icon="pi pi-trash"
+                                                 action="#{teamBean.delete}"
+                                                 update=":frm:data, :messageBox"
+                                                 process="@this"
+                                                 data-pfconfirmcommand="true"
+							                     rendered="#{loginBean.admin}">
+                                    <p:confirm header="Warning"
+							                   message="If this team is currently in use, it will be permanently deleted from your tasks. Do you want to proceed?"
+							                   icon="pi pi-exclamation-triangle" />
+                                    <f:setPropertyActionListener value="#{Team}" target="#{teamBean.selectedTeam}" />
+                                </p:commandButton>
+                            </p:column>
+                        </p:dataTable>
+                    </div>
+                </p:outputPanel>
+            </div>
+
+            <p:confirmDialog global="true" showEffect="fade" hideEffect="fade">
+                <p:commandButton value="Yes" type="button"
+                                 styleClass="ui-confirmdialog-yes" icon="pi pi-check" />
+                <p:commandButton value="No" type="button"
+                                 styleClass="ui-confirmdialog-no ui-button-flat" icon="pi pi-times" />
+            </p:confirmDialog>
+
+        </h:form>
+
+        <!-- Diálogo de Nuevo/Editar -->
+		<p:dialog id="dlgData" widgetVar="wdlgData" rendered="#{loginBean.admin}"
+		          modal="true" appendTo="@(body)" closeOnEscape="true" 
+		          resizable="false" responsive="true" draggable="true"
+		          header="#{teamBean.action eq 'Update' ? 'Edit Team Details':'Create New Team'}"
+		          styleClass="responsive-dialog" 
+		          fitViewport="true"> <h:form id="frmNewEdit">
+		        <p:outputPanel id="panelNewEdit" styleClass="p-2 p-md-3">
+		            
+		            <div class="row">
+		                <div class="col-12 col-md-5 border-end-md">
+		                    <div class="ui-fluid">
+		                        <div class="field mb-3">
+		                            <p:outputLabel for="name" value="Team Name" styleClass="font-bold mb-1 d-block" />
+		                            <div class="ui-inputgroup">
+		                                <span class="ui-inputgroup-addon"><i class="pi pi-users"></i></span>
+		                                <p:inputText id="name" value="#{teamBean.selectedTeam.name}" 
+		                                             required="true" placeholder="e.g. Sales Team" />
+		                            </div>
+		                            <p:message for="name" display="text" />
+		                        </div>
+		
+		                        <div class="field mb-3">
+		                            <p:outputLabel for="alias" value="Alias" styleClass="font-bold mb-1 d-block" />
+		                            <p:inputText id="alias" value="#{teamBean.selectedTeam.alias}" 
+		                                         maxlength="8" placeholder="Internal Code" />
+		                        </div>
+		                        
+		                        <div class="p-3 bg-light border-round mt-2 mobile-hide">
+		                            <i class="pi pi-info-circle text-primary mr-2"></i>
+		                            <span class="text-secondary" style="font-size: 0.85rem;">
+		                                Use a unique name for the team.
+		                            </span>
+		                        </div>
+		                    </div>
+		                </div>
+		
+		                <div class="col-12 col-md-7 ps-md-4 mt-3 mt-md-0">
+		                    <p:outputLabel value="Assign Team Members" styleClass="font-bold mb-2 d-block" />
+		                    
+		                    <div class="ui-fluid">
+		                        <p:selectManyMenu id="userSelection" 
+								                  value="#{teamBean.selectedUsers}" 
+								                  converter="omnifaces.SelectItemsConverter"
+								                  var="u_item"
+								                  showCheckbox="true" 
+								                  filter="true" 
+								                  filterMatchMode="contains" 
+								                  scrollHeight="180" 
+								                  styleClass="custom-filter-list"
+								                  style="width: 100%">
+								    
+								    <f:selectItems value="#{teamBean.allUsersFiltered}" 
+								                   var="u" 
+								                   itemLabel="#{u.fullName}" 
+								                   itemValue="#{u}" />
+								    
+								    <p:column>
+								        <div class="d-flex flex-column">
+								            <h:panelGroup styleClass="#{not u_item.active ? 'text-danger fw-bold' : ''}" style="font-size: 0.9rem;">
+								                <h:outputText value="#{u_item.fullName}" />
+								                <h:outputText value=" - INACTIVE" rendered="#{not u_item.active}" />
+								            </h:panelGroup>
+								            <h:outputText value="#{u_item.email}" styleClass="text-secondary" style="font-size: 0.75rem;" />
+								        </div>
+								    </p:column>
+								</p:selectManyMenu>
+		                        <div class="mt-2">
+		                             <small class="text-muted"><i class="pi pi-check-circle mr-1"></i>Only available users are shown.</small>
+		                        </div>
+		                    </div>
+		                </div>
+		            </div>
+		
+		            <div class="col-12 d-flex justify-content-center gap-3 mt-3">
+		                <p:commandButton id="ok_button" value="Save Team"
+		                                 icon="pi pi-save"
+		                                 actionListener="#{teamBean.ejecutar()}"
+		                                 process="@form"
+		                                 oncomplete="if (args &amp;&amp; !args.validationFailed) PF('wdlgData').hide();"
+		                                 update="panelNewEdit :frm:panelData :messageBox"
+		                                 styleClass="btn btn-primary" />
+		                <p:commandButton id="cancel_button" value="Cancel"
+		                                 icon="pi pi-times"
+		                                 immediate="true"
+		                                 oncomplete="PF('wdlgData').hide();"
+		                                 styleClass="btn btn-secondary" />
+		            </div>
+		            <p:defaultCommand target="ok_button" />
+		        </p:outputPanel>
+		    </h:form>
+		</p:dialog>
+
+		<p:dialog id="dlgViewTeam"
+		          widgetVar="wdlgViewTeam"
+		          modal="true"
+		          header="Team Details"
+		          responsive="true"
+		          resizable="true"
+		          styleClass="view-dialog"
+		          showEffect="fade" hideEffect="fade"
+		          width="400px">
+		    <h:form id="frmViewTeam">   <!-- ← FORM OBLIGATORIO -->
+			
+			    <h:panelGroup id="panelViewTeam" layout="block" styleClass="view-container">
+			
+			        <!-- Sección de Título -->
+			        <div class="view-title">
+			            #{teamBean.selectedTeam.name}
+			        </div>
+			
+			        <!-- Sección de Detalles -->
+			        <div class="view-grid">
+			            <div class="label">Team ID</div>
+			            <div class="value">#{teamBean.selectedTeam.id}</div>
+			        </div>
+
+			        <div class="view-grid">
+			            <div class="label">Alias</div>
+			            <div class="value">
+					        <span class="badge bg-info text-dark">
+					            #{teamBean.selectedTeam.alias}
+					        </span>
+			            </div>
+			        </div>
+                
+	                <hr/>
+	                <div class="label mb-2">Team Members:</div>
+	                <div class="d-flex flex-wrap">
+	                    <ui:repeat value="#{teamBean.selectedTeam.userNames}" var="name" varStatus="loop">
+					        <h:panelGroup layout="block" 
+					                      styleClass="member-chip #{not teamBean.selectedTeam.userActives.get(loop.index) ? 'inactive-member' : ''}">
+					            
+					            <i class="pi #{not teamBean.selectedTeam.userActives.get(loop.index) ? 'pi-user-minus' : 'pi-user'} me-1" 
+					               style="font-size: 0.8rem;"></i>
+					            
+					            <h:outputText value="#{name}" />
+					            
+					            <h:panelGroup rendered="#{not teamBean.selectedTeam.userActives.get(loop.index)}">
+					                <small style="font-size: 0.65rem; margin-left: 5px; font-weight: bold;">(INACTIVE)</small>
+					            </h:panelGroup>
+					        </h:panelGroup>
+					    </ui:repeat>
+	                    <h:outputText value="No members assigned" rendered="#{empty teamBean.selectedTeam.userNames}" styleClass="text-muted italic" />
+	                </div>
+	
+	                <!-- Botones -->
+	                <div class="form-actions-container">
+							<p:commandButton id="edit_details_button" 
+						                 value="Edit"
+						                 icon="pi pi-pencil"
+						                 rendered="#{teamBean.canModify()}"
+						                 oncomplete="PF('wdlgViewTeam').hide(); PF('wdlgData').show();"
+						                 update=":dlgData"
+						                 styleClass="custom-dlg-btn edit-btn" />	
+	
+	                    <p:commandButton id="cancel_button" value="Cancel"
+	                                     immediate="true"
+	                                     oncomplete="PF('wdlgViewTeam').hide();"
+	                                     styleClass="custom-dlg-btn cancel-btn"/>
+	                </div>
+			
+			    </h:panelGroup>
+		    </h:form>
+		</p:dialog>
+    </ui:define>
+</ui:composition>
+</html>

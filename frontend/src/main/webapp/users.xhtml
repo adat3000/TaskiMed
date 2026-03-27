@@ -1,0 +1,470 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui">
+
+<ui:composition template="/WEB-INF/plantilla.xhtml">
+    <ui:define name="contenido">
+		<style>
+			.view-dialog .ui-dialog-content {
+			    padding: 0 !important;
+			}
+			
+			.view-container {
+			    padding: 20px;
+			    font-family: "Roboto", sans-serif;
+			}
+			
+			.view-title {
+			    margin-bottom: 15px;
+			}
+			
+			.view-title h2 {
+			    font-size: 1.3rem;
+			    margin: 0;
+			    font-weight: 600;
+			}
+			
+			.status-badge {
+			    padding: 4px 10px;
+			    border-radius: 6px;
+			    font-size: 0.8rem;
+			    color: white;
+			    font-weight: 600;
+			    display: inline-block;
+			}
+			
+			/* Colores */
+			.status-badge.new         { background: #6c757d; }
+			.status-badge.in_progress { background: #f0ad4e; color:#222; }
+			.status-badge.completed   { background: #28a745; }
+			.status-badge.cancelled   { background: #dc3545; }
+			
+			.view-grid {
+			    display: grid;
+			    grid-template-columns: 120px 1fr;
+			    row-gap: 10px;
+			    column-gap: 10px;
+			}
+			
+			.label {
+			    font-weight: 600;
+			    color: #555;
+			}
+			
+			.value {
+			    color: #000;
+			}
+			/* Estilo para fila inactiva en la tabla de usuarios */
+			.row-inactive {
+			    background-color: #ff000015 !important; /* Rojo muy tenue de fondo */
+			    color: #dc3545 !important; /* Texto rojo */
+			    font-weight: normal;
+			}
+		</style>
+        <p:growl id="messageBox" showDetail="true" autoUpdate="true" />
+
+        <h:form id="frm">
+            <div class="container-fluid px-3">
+                <p:outputPanel id="panelData">
+                    <div class="table-responsive">
+                        <p:dataTable id="data"
+                                     var="User"
+                                     caption="User"
+                                     value="#{userBean.lazyModel}"
+                                     widgetVar="tableEntity"
+                                     paginator="true"
+                                     paginatorPosition="bottom"
+                                     lazy="true"
+                                     rows="10"
+                                     rowsPerPageTemplate="5,10,15,25,50"
+                                     currentPageReportTemplate="{startRecord} - {endRecord} of {totalRecords} records"
+                                     paginatorTemplate="{CurrentPageReport} {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                                     reflow="true"
+                                     responsiveLayout="scroll"
+                                     styleClass="table table-hover table-striped table-bordered table-sm"
+                                     emptyMessage="No records"
+                                     sortMode="single"
+                                     rowKey="#{User.id}"
+                                     rowStyleClass="#{User.active ? '' : 'row-inactive'}"
+                                     selectionMode="single"
+                                     selection="#{userBean.selectedUser}">
+
+                            <f:facet name="header">
+                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+
+                                    <!-- Column Toggler -->
+                                    <div>
+                                        <p:commandButton id="toggler" type="button" value="☰" styleClass="btn btn-outline-secondary" />
+                                        <p:columnToggler datasource="data" trigger="toggler" />
+                                    </div>
+
+									<div class="me-3">
+									    <p:commandButton value="Users" type="button"
+									        style="
+									            padding: 0;
+									            margin: 0;
+									            border: none;
+									            background: transparent;
+									            color: #000000;
+									            font-size: 1.3rem;
+									            font-weight: 700;
+									            border-bottom: 2px solid #007ad9;
+									            box-shadow: none;
+									            cursor: default;
+									        " />
+									</div>
+
+                                    <!-- Buscar -->
+                                    <div class="d-flex align-items-center flex-nowrap" style="white-space: nowrap;">
+                                        <p:outputLabel for="globalFilter" value="Search:" styleClass="me-2" />
+                                        <p:inputText id="globalFilter"
+                                                     placeholder="Enter value to filter"
+                                                     style="max-width: 200px;"
+                                                     onkeypress="if (event.keyCode == 13) { PF('tableEntity').filter(); return false; }" />
+
+                                        <p:commandButton id="btnBuscar"
+                                                         icon="pi pi-search"
+                                                         styleClass="btn btn-outline-secondary ms-2"
+                                                         onclick="PF('tableEntity').filter(); return false;" />
+                                    </div>
+
+                                    <!-- Exportar -->
+                                    <div>
+                                        <p:commandButton value="Export to Excel" icon="pi pi-file-excel"
+                                                         styleClass="btn btn-outline-secondary"
+                                                         ajax="false">
+                                            <p:dataExporter type="xlsx"
+                                                            target="data"
+                                                            fileName="users"
+                                                            exportHeader="true"
+                                                            exportFooter="true" />
+                                        </p:commandButton>
+                                    </div>
+
+                                    <!-- Botón Nuevo -->
+                                    <div>
+                                        <p:commandButton id="btnNuevo" value="New" icon="pi pi-fw pi-plus"
+                                                         styleClass="btn btn-primary"
+                                                         rendered="#{loginBean.admin}"
+                                                         actionListener="#{userBean.clear()}"
+                                                         oncomplete="PF('wdlgData').show();"
+                                                         update=":dlgData">
+                                            <f:setPropertyActionListener value="Create" target="#{userBean.action}" />
+                                        </p:commandButton>
+                                    </div>
+
+                                </div>
+                            </f:facet>
+
+                            <!-- Columnas -->
+                            <p:column headerText="ID" visible="false" sortBy="#{User.id}" field="id" filterBy="#{User.id}" filterStyle="display:none">
+                                <h:outputLabel value="#{User.id}" />
+                            </p:column>
+
+                            <p:column headerText="User" sortBy="#{User.fullName}" field="fullName" filterBy="#{User.fullName}" filterStyle="display:none">
+                                <h:outputLabel value="#{User.fullName}" />
+                            </p:column>
+
+                            <p:column headerText="Email" sortBy="#{User.email}" field="email" filterBy="#{User.email}" filterStyle="display:none">
+                                <h:outputLabel value="#{User.email}" />
+                            </p:column>
+
+							<p:column headerText="Role" sortBy="#{User.roleName}" field="roleName" filterBy="#{User.roleName}" filterStyle="display:none">
+							    <span class="badge
+							        #{empty User.roleId ? ' bg-light text-dark' :
+							          (User.roleName eq 'ADMIN' ? ' bg-success' :
+							          (User.roleName eq 'STAFF' ? ' bg-info text-dark' : ' bg-secondary'))}">
+							        #{empty User.roleId ? 'No role' : User.roleName}
+							    </span>
+							</p:column>
+
+                            <p:column headerText="Phone" sortBy="#{User.phone}" field="phone" filterBy="#{User.phone}" filterStyle="display:none">
+                                <h:outputLabel value="#{User.phone}" />
+                            </p:column>
+
+                            <p:column headerText="Job position" sortBy="#{User.jobPosition}" field="jobPosition" filterBy="#{User.jobPosition}" filterStyle="display:none">
+                                <h:outputLabel value="#{User.jobPosition}" />
+                            </p:column>
+
+							<p:column headerText="Team" sortBy="#{User.teamAlias}" 
+							          field="teamAlias" filterBy="#{User.teamAlias}" filterStyle="display:none">
+							    
+							    <h:panelGroup rendered="#{empty User.teamAlias}">
+							        <span class="badge bg-secondary">None</span>
+							    </h:panelGroup>
+							
+							    <h:panelGroup id="teamBadge" rendered="#{not empty User.teamAlias}"
+							                  layout="block" 
+							                  styleClass="badge-custom bg-info text-black">
+							        #{User.teamAlias}
+							    </h:panelGroup>
+							    <p:overlayPanel for="teamBadge" 
+							                    dismissable="true" 
+							                    showEvent="click"
+							                    showCloseIcon="true" 
+							                    style="width:200px"
+							                    my="center top"
+							                    at="center bottom">
+
+							        <div style="padding: 15px; font-weight: bold; text-align: center;">
+							            #{User.teamName}
+							        </div>
+							    </p:overlayPanel>
+							</p:column>
+
+							<p:column headerText="Entry Date"
+							          sortBy="#{User.entryDate != null ? User.entryDate.time : 0}"
+							          field="entryDate"
+							          filterBy="#{User.entryDate != null ? User.entryDate.time : 0}"
+							          filterStyle="display:none"
+							          exportValue="#{empty User.entryDate ? '' : User.formattedEntryDate}">
+							    
+							    <h:outputText value="#{empty User.entryDate ? '' : User.formattedEntryDate}" />
+							</p:column>
+
+                            <p:column headerText="Active" sortBy="#{User.active}" filterBy="#{User.active}" filterStyle="display:none" exportable="false">
+                                <p:selectBooleanCheckbox value="#{User.active}" disabled="true" />
+                            </p:column>
+
+                            <p:column headerText="#{loginBean.admin ? 'Edit' : 'View'}" exportable="false">
+							    <p:commandButton icon="pi pi-eye"
+							                     update=":dlgViewUser"
+							                     oncomplete="PF('wdlgViewUser').show();"
+							                     process="@this"
+							                     styleClass="ui-button-flat ui-button-plain"
+							                     rendered="#{!loginBean.admin}">
+							        <f:setPropertyActionListener value="#{User}" target="#{userBean.selectedUser}" />
+							        <f:setPropertyActionListener value="Update" target="#{userBean.action}" />
+							    </p:commandButton>
+                                <p:commandButton icon="pi pi-pencil" oncomplete="PF('wdlgData').show();"
+                                                 update=":dlgData, :messageBox"
+							                     rendered="#{loginBean.admin}">
+                                    <f:setPropertyActionListener value="Update" target="#{userBean.action}" />
+                                    <f:setPropertyActionListener value="#{User}" target="#{userBean.selectedUser}" />
+                                </p:commandButton>
+                            </p:column>
+
+                            <p:column headerText="Delete" exportable="false" rendered="#{loginBean.admin}">
+                                <p:commandButton icon="pi pi-trash"
+                                                 action="#{userBean.delete}"
+                                                 update=":frm:data, :messageBox"
+                                                 process="@this"
+                                                 data-pfconfirmcommand="true"
+							                     rendered="#{loginBean.admin}">
+                                    <p:confirm header="Confirmation" message="Do you want to delete?" icon="pi pi-exclamation-triangle" />
+                                    <f:setPropertyActionListener value="#{User}" target="#{userBean.selectedUser}" />
+                                </p:commandButton>
+                            </p:column>
+                        </p:dataTable>
+                    </div>
+                </p:outputPanel>
+            </div>
+
+            <p:confirmDialog global="true" showEffect="fade" hideEffect="fade">
+                <p:commandButton value="Yes" type="button"
+                                 styleClass="ui-confirmdialog-yes" icon="pi pi-check" />
+                <p:commandButton value="No" type="button"
+                                 styleClass="ui-confirmdialog-no ui-button-flat" icon="pi pi-times" />
+            </p:confirmDialog>
+        </h:form>
+
+        <!-- Diálogo de Nuevo/Editar -->
+        <p:dialog id="dlgData" widgetVar="wdlgData" rendered="#{loginBean.admin}"
+                  modal="true" appendTo="@(body)" closeOnEscape="true" resizable="true"
+                  responsive="true" style="max-width: 100vw; overflow-x: hidden;"
+                  header="#{userBean.action eq 'Update' ? 'User Info':'New User'}">
+
+            <h:form id="frmNewEdit">
+                <p:outputPanel id="panelNewEdit" style="overflow-y:auto; max-height:70vh; overflow-x:hidden;">
+                    <div class="mx-auto px-3" style="max-width: 800px; width: 100%;">
+                        <div class="card mt-3">
+                            <div class="card-header bg-primary text-white">
+                                User Details
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <ui:fragment rendered="#{not empty userBean.selectedUser.id}">
+                                        <div class="col-md-6 mb-3">
+                                            <p><strong>ID:</strong>
+                                                <p:inputText id="codigo" value="#{userBean.selectedUser.id}" readonly="true"
+                                                             styleClass="form-control ui-state-disabled"/>
+                                            </p>
+                                        </div>
+                                    </ui:fragment>
+
+                                    <div class="col-md-6 mb-3">
+                                        <p><strong>First Name:</strong>
+                                            <p:inputText id="firstName" value="#{userBean.selectedUser.firstName}" required="true" styleClass="form-control"/>
+                                        </p>
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <p><strong>Last Name:</strong>
+                                            <p:inputText id="lastName" value="#{userBean.selectedUser.lastName}" required="true" styleClass="form-control"/>
+                                        </p>
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <p><strong>Role:</strong>
+											<ui:fragment rendered="#{not empty userBean.selectedUser}">
+	                                            <p:selectOneMenu id="role"
+	                                                             value="#{userBean.selectedUser.roleId}"
+	                                                             panelStyle="width:250px" required="true">
+	                                                <f:selectItems value="#{roleBean.roles}" var="r"
+	                                                               itemValue="#{r.id}" itemLabel="#{r.name}" />
+	                                            </p:selectOneMenu>
+											</ui:fragment>
+                                        </p>
+                                    </div>
+
+									<div class="col-md-6 mb-3">
+									    <p><strong>Team:</strong>
+                                            <p:inputText id="team" value="#{empty userBean.selectedUser.teamName ? 'No Team' : userBean.selectedUser.teamName}" readonly="true"
+                                                         styleClass="form-control ui-state-disabled"/>
+									    </p>
+									</div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <p><strong>Email:</strong>
+											<p:inputText id="email"
+											             value="#{userBean.selectedUser.email}"
+											             styleClass="form-control #{userBean.action eq 'Update' ? 'ui-state-disabled' : ''}"
+											             readonly="#{userBean.action eq 'Update'}"
+											             required="#{userBean.action ne 'Update'}"
+											             requiredMessage="Email is required">
+											
+											    <p:ajax event="blur"
+											            update="emailMsg"
+											            process="@this"
+											            listener="#{userBean.validateEmail}" />
+											</p:inputText>
+											
+											<p:message id="emailMsg" for="email" display="text" />
+                                        </p>
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <p><strong>Phone:</strong>
+											<p:inputMask id="phone" value="#{userBean.selectedUser.phone}"
+														mask="(999) 999-9999" validateMask="true" styleClass="form-control"
+														autoClear="false" slotChar="_" />
+                                        </p>
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <p><strong>Job Position:</strong>
+                                            <p:inputText id="jobPosition" value="#{userBean.selectedUser.jobPosition}" styleClass="form-control"/>
+                                        </p>
+                                    </div>
+
+                                    <div class="col-md-6 mb-3 d-flex align-items-end">
+                                        <div class="form-check">
+                                            <p><strong>Active:</strong>
+                                                <p:selectBooleanCheckbox id="active" value="#{userBean.selectedUser.active}" />
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="col-12 d-flex justify-content-center gap-3 mt-3">
+                            <p:commandButton id="ok_button" value="Save"
+                                             actionListener="#{userBean.ejecutar()}"
+                                             process="@form"
+                                             oncomplete="if (args &amp;&amp; !args.validationFailed) PF('wdlgData').hide();"
+                                             update=":frmNewEdit:panelNewEdit :frm:panelData :messageBox"
+                                             styleClass="btn btn-primary" />
+
+                            <p:commandButton id="cancel_button" value="Cancel"
+                                             immediate="true"
+                                             oncomplete="PF('wdlgData').hide();"
+                                             styleClass="btn btn-secondary">
+                                <p:ajax update="panelNewEdit" resetValues="true" />
+                            </p:commandButton>
+
+                            <p:defaultCommand target="ok_button" />
+                        </div>
+                    </div>
+                </p:outputPanel>
+            </h:form>
+        </p:dialog>
+		<p:dialog id="dlgViewUser"
+		          widgetVar="wdlgViewUser"
+		          modal="true"
+		          header="User Details"
+		          responsive="true"
+		          resizable="true"
+		          styleClass="view-dialog"
+		          showEffect="fade" hideEffect="fade"
+		          width="400px">
+		    <h:form id="frmViewUser">   <!-- ← FORM OBLIGATORIO -->
+			
+			    <h:panelGroup id="panelViewUser" layout="block" styleClass="view-container">
+			
+			        <!-- Sección de Título -->
+			        <div class="view-title">
+			            #{userBean.selectedUser.fullName}
+			        </div>
+			
+			        <!-- Sección de Detalles -->
+			        <div class="view-grid">
+			            <div class="label">User ID</div>
+			            <div class="value">#{userBean.selectedUser.id}</div>
+			
+						<div class="label">Role</div>
+						<div class="value">
+						    <span class="badge
+						        #{empty userBean.selectedUser.roleId ? ' bg-light text-dark' :
+						          (userBean.selectedUser.roleName eq 'ADMIN' ? ' bg-success' :
+						          (userBean.selectedUser.roleName eq 'STAFF' ? ' bg-info text-dark' : ' bg-secondary'))}">
+						        #{empty userBean.selectedUser.roleId ? 'No role' : userBean.selectedUser.roleName}
+						    </span>
+						</div>
+
+						<div class="label">Team</div>
+						<div class="value">#{empty userBean.selectedUser.teamName ? 'None' : userBean.selectedUser.teamName}</div>
+						
+						<div class="label">Email</div>
+						<div class="value">#{userBean.selectedUser.email}</div>
+						
+						<div class="label">Phone</div>
+						<div class="value">#{userBean.selectedUser.phone}</div>
+						
+						<div class="label">Job Position</div>
+						<div class="value">#{userBean.selectedUser.jobPosition}</div>
+			
+			            <div class="label">Entry Date</div>
+			            <div class="value">#{userBean.selectedUser.formattedEntryDate}</div>
+						
+						<div class="label">Active</div>
+						<div class="value"><p:selectBooleanCheckbox id="active" value="#{userBean.selectedUser.active}" disabled="true" /></div>
+			        </div>
+	
+	                <!-- Botones -->
+	                <div class="form-actions-container">
+	                    <p:commandButton id="ok_button" value="Save"
+	                    				 rendered="#{loginBean.admin}"
+	                                     actionListener="#{userBean.ejecutar()}"
+                                         process="@form"
+	                                     oncomplete="if (args &amp;&amp; !args.validationFailed) PF('wdlgViewUser').hide();"
+	                                     update=":frm:panelData :messageBox"
+	                                     styleClass="custom-dlg-btn save-btn" />
+	
+	                    <p:commandButton id="cancel_button" value="Cancel"
+	                                     immediate="true"
+	                                     oncomplete="PF('wdlgViewUser').hide();"
+	                                     styleClass="custom-dlg-btn cancel-btn"/>
+	                </div>
+			
+			    </h:panelGroup>
+		    </h:form>
+		</p:dialog>
+    </ui:define>
+</ui:composition>
+</html>

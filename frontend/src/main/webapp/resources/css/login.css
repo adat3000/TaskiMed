@@ -1,0 +1,88 @@
+@charset "UTF-8";
+body {
+    margin: 0;
+    padding: 0;
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    background: linear-gradient(135deg, #000000 0%, #66b2ff 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.login-card {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    padding: 2.5rem 1.5rem 1.0rem 1.5rem;
+    width: 100%;
+    max-width: 350px;
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 0.8rem;
+}
+
+.login-logo {
+    width: 250px;
+    height: auto;
+    margin-bottom: 0.4rem;
+}
+
+.login-title {
+    font-size: 1.1rem;
+    color: #333;
+    font-weight: 600;
+    margin: 0;
+}
+
+/* Ajuste de espaciado entre campos */
+.p-panelgrid .p-grid > div {
+    padding: 0.15rem !important;
+}
+
+.p-inputtext,
+.p-password input {
+    width: 100% !important;
+    padding: 0.4rem 0.5rem !important;
+    font-size: 0.9rem !important;
+    margin-bottom: 0.25rem !important;
+}
+
+.p-outputlabel {
+    margin-bottom: 0.1rem !important;
+    font-size: 0.9rem;
+    display: block;
+}
+
+.btn-login, .btn-cancel {
+    width: 100%;
+    padding: 0.45rem 0 !important;
+    font-size: 0.9rem !important;
+    border: none !important;
+}
+
+.btn-login {
+    background-color: #007ad9 !important;
+    color: #fff !important;
+}
+
+.btn-login:hover {
+    background-color: #005fa3 !important;
+}
+
+.btn-cancel {
+    background-color: #e0e0e0 !important;
+    color: #333 !important;
+}
+
+@media (max-width: 600px) {
+    .login-card {
+        margin: 1rem;
+        padding: 2.5rem 1.5rem 1.0rem 1.5rem;
+    }
+    .login-logo {
+        width: 250px;
+    }
+}

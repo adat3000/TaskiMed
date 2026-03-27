@@ -1,0 +1,26 @@
+@charset "UTF-8";
+/* ==========================================================================
+   DATATABLE RESPONSIVE (PrimeFaces)
+   Archivo: datatable-responsive.css
+   Autor: ChatGPT
+   Descripción:
+   Ajusta visualmente las tablas amplias de PrimeFaces para mantener
+   la legibilidad y evitar necesidad de reducir el zoom del navegador.
+   ========================================================================== */
+
+/* 🔹 Aplica reducción solo al DataTable */
+.ui-datatable {
+    font-size: 0.9rem !important; /* ~90% del tamaño normal */
+}
+
+/* 🔹 Ajusta tamaño de celdas y evita saltos de línea */
+.ui-datatable td, .ui-datatable th {
+    padding: 0.15rem 0.5rem !important;
+    white-space: nowrap !important;
+}
+
+/* 🔹 Ajusta también los filtros y encabezados internos */
+.ui-column-filter, .ui-datatable-header, .ui-datatable-footer {
+    font-size: 0.85rem !important;
+    overflow: visible !important;
+}

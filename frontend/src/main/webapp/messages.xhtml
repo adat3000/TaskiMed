@@ -1,0 +1,455 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://xmlns.jcp.org/jsf/html"
+	xmlns:f="http://xmlns.jcp.org/jsf/core"
+	xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+
+<ui:composition template="/WEB-INF/plantilla.xhtml">
+
+	<ui:define name="contenido">
+		<style>
+/* Modo smartphone */
+@media ( max-width : 600px) {
+	.ui-dialog.dlgNewResponsive {
+		width: 95% !important;
+		max-width: 95% !important;
+	}
+}
+
+/* Tablets */
+@media ( min-width : 601px) and (max-width: 1024px) {
+	.ui-dialog.dlgNewResponsive {
+		width: 70% !important;
+		max-width: 70% !important;
+	}
+}
+
+/* Desktop */
+@media ( min-width : 1025px) {
+	.ui-dialog.dlgNewResponsive {
+		width: 50% !important;
+		max-width: 50% !important;
+	}
+}
+
+.ui-dialog.dlgDetailResponsive {
+	width: 90% !important;
+	max-width: 1100px !important;
+	min-width: 300px !important;
+}
+
+.ui-dialog.dlgDetailResponsive .ui-dialog-content {
+	width: 100% !important;
+	box-sizing: border-box;
+}
+/* Corrección del corte a la derecha */
+.ui-dialog.dlgDetailResponsive {
+	padding: 0 !important;
+	box-sizing: border-box !important;
+}
+
+.ui-dialog.dlgDetailResponsive .ui-dialog-titlebar, .ui-dialog.dlgDetailResponsive .ui-dialog-content,
+	.ui-dialog.dlgDetailResponsive .ui-dialog-footer {
+	padding-left: 1rem !important;
+	padding-right: 1rem !important;
+	box-sizing: border-box !important;
+}
+/* ... (tus estilos existentes) ... */
+
+/* Estilo para mensajes NO LEÍDOS */
+.unread-message {
+	font-weight: bold !important;
+}
+</style>
+		<p:growl id="msgGrowl" showDetail="true" autoUpdate="true" />
+
+		<h:form id="frm">
+
+			<!-- ===================================================== -->
+			<!--   TABLA PRINCIPAL - ESTILO PATIENTS.XHTML           -->
+			<!-- ===================================================== -->
+
+			<div class="container-fluid px-3">
+				<p:outputPanel id="panelData">
+
+					<div class="table-responsive">
+
+						<p:dataTable id="data" var="msg"
+							value="#{messageBean.lazyModel}" lazy="true"
+							widgetVar="tableEntity" paginator="true"
+                            paginatorPosition="bottom"
+							rowStyleClass="#{not msg.read ? 'unread-message' : null}"
+							rows="10" rowsPerPageTemplate="5,10,15,25,50"
+							currentPageReportTemplate="{startRecord} - {endRecord} of {totalRecords} records"
+							paginatorTemplate="{CurrentPageReport} {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+							reflow="true" responsiveLayout="scroll"
+							styleClass="table table-hover table-striped table-bordered table-sm datatable-responsive"
+							emptyMessage="No records" sortMode="single" rowKey="#{msg.id}"
+							selectionMode="single" selection="#{messageBean.selectedMessage}">
+
+							<!-- HEADER - ESTILO PATIENTS.XHTML -->
+							<f:facet name="header">
+								<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+									<!-- Column Toggler -->
+									<div>
+										<p:commandButton id="toggler" type="button" value="☰"
+											styleClass="btn btn-outline-secondary" />
+										<p:columnToggler datasource="data" trigger="toggler" />
+									</div>
+
+									<div class="me-3">
+										<p:commandButton value="Messages" type="button"
+											style="
+									            padding: 0;
+									            margin: 0;
+									            border: none;
+									            background: transparent;
+									            color: #000000;
+									            font-size: 1.3rem;
+									            font-weight: 700;
+									            border-bottom: 2px solid #007ad9;
+									            box-shadow: none;
+									            cursor: default;
+									        " />
+									</div>
+									<!-- TÍTULO -->
+									<div class="me-3 d-flex align-items-center gap-5">
+										<p:commandButton icon="pi pi-refresh"
+											actionListener="#{messageBean.reloadAll}"
+											update="data"
+											styleClass="btn btn-outline-secondary ms-2" />
+									</div>
+
+									<!-- FILTRO: SELECTONEMENU -->
+									<div class="d-flex align-items-center">
+										<p:selectOneMenu value="#{messageBean.currentFilter}"
+											style="width:200px">
+											<f:selectItem itemLabel="📚 All" itemValue="ALL" />
+											<f:selectItem itemLabel="📥 Inbox" itemValue="INBOX" />
+											<f:selectItem itemLabel="📩 Unread" itemValue="UNREAD" />
+											<f:selectItem itemLabel="⭐ Starred" itemValue="STARRED" />
+											<f:selectItem itemLabel="📤 Sent" itemValue="SENT" />
+											<f:selectItem itemLabel="🗂 Archived" itemValue="ARCHIVED" />
+
+											<p:ajax listener="#{messageBean.applyFilter}"
+												update="data" />
+										</p:selectOneMenu>
+									</div>
+
+									<!-- BUSCADOR -->
+									<div class="d-flex align-items-center flex-nowrap"
+										style="white-space: nowrap;">
+										<p:outputLabel for="globalFilter" value="Search:"
+											styleClass="me-2" />
+										<p:inputText id="globalFilter" placeholder="Search..."
+											style="max-width:200px;"
+											onkeypress="if (event.keyCode==13){PF('tableEntity').filter();return false;}" />
+
+										<p:commandButton id="btnBuscar" icon="pi pi-search"
+											styleClass="btn btn-outline-secondary ms-2"
+											onclick="PF('tableEntity').filter();return false;" />
+									</div>
+
+									<!-- EXPORTAR -->
+									<div>
+										<p:commandButton value="Export to Excel"
+											icon="pi pi-file-excel"
+											styleClass="btn btn-outline-secondary" ajax="false">
+											<p:dataExporter type="xlsx" target="data"
+												fileName="messages" exportHeader="true" exportFooter="true" />
+										</p:commandButton>
+									</div>
+
+									<!-- NUEVO -->
+									<div>
+										<p:commandButton value="New" icon="pi pi-plus"
+											styleClass="btn btn-primary" update=":dlgNew"
+											actionListener="#{messageBean.prepareNew}"
+											oncomplete="PF('dlgNew').show();" />
+									</div>
+
+								</div>
+							</f:facet>
+
+
+							<!-- ===================================================== -->
+							<!--   COLUMNS                                              -->
+							<!-- ===================================================== -->
+
+							<p:column headerText="ID" visible="false" width="50"
+								sortBy="#{msg.id}" field="id" filterBy="#{msg.id}"
+								filterStyle="display:none">
+								<h:outputText value="#{msg.id}" />
+							</p:column>
+
+<p:column headerText="Message" 
+          filterBy="#{msg.subject}" 
+          filterMatchMode="contains" 
+          filterStyle="display:none">
+    
+    <div style="display: flex; align-items: flex-start; padding: 5px 0;">
+        
+        <div style="width: 35px; flex-shrink: 0; padding-top: 2px;">
+            <h:panelGroup rendered="#{msg.folder eq 'inbox'}">
+                <ui:fragment rendered="#{not msg.read}">
+                    <div title="Unread" style="position: relative; display: inline-block; width: 24px; cursor: pointer;">
+                        <span style="font-size: 1.2em; line-height: 1;">📩</span>
+                        <span style="position: absolute; top: 32px; right: 2px; font-size: 0.9em;">🔵</span>
+                    </div>
+                </ui:fragment>
+                <ui:fragment rendered="#{msg.read}">
+                    <p:commandLink actionListener="#{messageBean.markAsUnread(msg)}"
+		                           title="Mark as unread"
+		                           update=":frm:data"
+		                           style="display: inline-block; width: 24px; text-decoration: none; text-align: center;">
+		                <span style="font-size: 1.1em; color: #5bc0de; line-height: 1;">📖</span>
+            </p:commandLink>
+                </ui:fragment>
+            </h:panelGroup>
+            <h:panelGroup rendered="#{msg.folder eq 'sent'}">
+                <span title="Sent" style="font-size: 1.1em;">📤</span>
+            </h:panelGroup>
+        </div>
+
+        <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;">
+            
+            <h:outputText value="#{msg.folder eq 'sent' ? messageBean.getRecipientNames(msg) : messageBean.getSenderName(msg)}" 
+                          style="display: block; width: 100%; max-width: 65vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #333; font-weight: #{not msg.read and msg.folder eq 'inbox' ? 'bold' : 'normal'};" />
+            
+            <h:outputText value="#{msg.subject}" 
+                          style="display: block; width: 100%; max-width: 65vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #222; font-weight: #{not msg.read and msg.folder eq 'inbox' ? 'bold' : 'normal'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" />
+
+            <h:outputText value="#{msg.body}" 
+					    style="display: block; width: 100%; max-width: 65vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #666;" />
+        </div>
+    </div>
+</p:column>
+
+							<p:column headerText="Folder" width="80" sortBy="#{msg.folder}"
+								field="folder" filterBy="#{msg.folder}"
+								filterStyle="display:none">
+								<span
+									class="badge
+							        #{empty msg.folder ? ' bg-light text-dark' :
+							          (msg.folder eq 'inbox' ? ' bg-success' :
+							          (msg.folder eq 'sent' ? ' bg-info text-dark' : ' bg-secondary'))}">
+									#{empty msg.folder ? 'No Folder' : msg.folder} </span>
+							</p:column>
+
+							<p:column headerText="Date" width="50" sortBy="#{msg.createdAt}"
+								field="createdAt" filterBy="#{msg.createdAt}"
+								filterStyle="display:none"
+								exportValue="#{msg.formattedCreatedAt}">
+								<h:outputText value="#{msg.formattedCreatedAt}" />
+							</p:column>
+
+							<p:column width="80" style="text-align:center" headerText="View"
+								exportable="false">
+								<p:commandButton icon="pi pi-eye" title="Ver"
+									update=":frm:data,:dlgDetail"
+									actionListener="#{messageBean.openMessage(msg)}"
+									oncomplete="PF('dlgDetail').show();" />
+							</p:column>
+							<p:column headerText="Delete" exportable="false">
+								<p:commandButton icon="pi pi-trash"
+									action="#{messageBean.delete}"
+									update=":frm:data, :msgGrowl" process="@this"
+									data-pfconfirmcommand="true">
+									<p:confirm header="Confirmation"
+										message="Do you want to delete this message?"
+										icon="pi pi-exclamation-triangle" />
+
+									<f:setPropertyActionListener value="#{msg}"
+										target="#{messageBean.selectedMessage}" />
+								</p:commandButton>
+							</p:column>
+
+						</p:dataTable>
+
+					</div>
+				</p:outputPanel>
+			</div>
+			<p:confirmDialog global="true" showEffect="fade" hideEffect="fade">
+				<p:commandButton value="Yes" type="button"
+					styleClass="ui-confirmdialog-yes" icon="pi pi-check" />
+				<p:commandButton value="No" type="button"
+					styleClass="ui-confirmdialog-no ui-button-flat" icon="pi pi-times" />
+			</p:confirmDialog>
+
+		</h:form>
+
+
+		<!-- ========================================================= -->
+		<!--   DIALOG: NUEVO / RESPONDER / REENVIAR                    -->
+		<!-- ========================================================= -->
+
+		<p:dialog id="dlgNew" widgetVar="dlgNew" modal="true"
+			header="#{messageBean.dialogTitle}" resizable="true"
+			styleClass="dlgNewResponsive"
+			onShow="initDescCounter('formNew:messageBody', 'descCounterMsg', 300); initDescCounter('formNew:subject', 'descCounterSbj', 100)">
+
+			<h:form id="formNew">
+				<p:messages />
+
+				<h:panelGroup id="recipientContainer" layout="block"
+					style="margin-bottom:10px">
+
+					<p:outputLabel value="To: "
+						style="font-weight:bold; margin-right:5px" />
+
+					<p:selectCheckboxMenu id="recipients" 
+					                      value="#{messageBean.selectedRecipients}" 
+					                      label="Select Recipients"
+					                      multiple="true" 
+					                      filter="true" 
+					                      filterMatchMode="contains"
+					                      updateLabel="true"
+					                      converter="omnifaces.SelectItemsConverter"
+					                      scrollHeight="250"
+					                      var="u_item"
+					                      panelStyle="width: 350px" 
+					                      style="width: 100%;">
+					
+					    <f:selectItems value="#{messageBean.allUsers}" 
+					                   var="u" 
+					                   itemLabel="#{u.fullName}" 
+					                   itemValue="#{u}" />
+					
+					    <p:column>
+					        <h:outputText value="#{u_item.fullName}" 
+					                      styleClass="#{not u_item.active ? 'text-danger fw-bold' : ''}" />
+					        
+					        <h:outputText value=" (INACTIVE)" 
+					                      rendered="#{not u_item.active}" 
+					                      styleClass="text-danger fw-bold" 
+					                      style="font-size: 0.8rem;" />
+					                      
+					        <br/>
+					        <h:outputText value="#{u_item.email}" 
+					                      styleClass="text-secondary" 
+					                      style="font-size: 0.7rem;" />
+					    </p:column>
+					</p:selectCheckboxMenu>
+
+					<h:outputText value="#{messageBean.selectedMessage.senderName}"
+						rendered="#{not messageBean.canEditRecipients}"
+						style="font-style: italic;" />
+
+				</h:panelGroup>
+
+				<p:inputText id="subject" value="#{messageBean.newMessage.subject}"
+					placeholder="Subject" maxlength="100"
+					onkeyup="updateDescCounterColor(this, 'descCounterSbj', 100)"
+					style="width:100%;margin-top:10px" />
+				<span id="descCounterSbj"
+					style="font-size: .75rem; float: right; margin-top: 4px; color: #555;">
+					0 / 100 </span>
+
+				<p:inputTextarea id="messageBody"
+					value="#{messageBean.newMessage.body}" maxlength="300"
+					autoResize="true"
+					onkeyup="updateDescCounterColor(this, 'descCounterMsg', 300)"
+					style="width:100%;height:160px;margin-top:10px" />
+
+				<span id="descCounterMsg"
+					style="font-size: .75rem; float: right; margin-top: 4px; color: #555;">
+					0 / 300 </span>
+
+				<div class="mt-3 d-flex justify-content-end gap-2">
+					<p:commandButton value="Cancel"
+						onclick="PF('dlgNew').hide();return false;" />
+
+					<p:commandButton value="Send" styleClass="btn btn-primary"
+						actionListener="#{messageBean.sendNew}"
+						update=":frm:data"
+						oncomplete="if(!args.validationFailed) PF('dlgNew').hide();" />
+				</div>
+
+			</h:form>
+		</p:dialog>
+
+
+		<!-- ========================================================= -->
+		<!--   DIALOG: DETALLE                                          -->
+		<!-- ========================================================= -->
+
+		<p:dialog id="dlgDetail" widgetVar="dlgDetail"
+			header="#{messageBean.currentFilter}" modal="true" resizable="true"
+			appendTo="@(body)" styleClass="dlgDetailResponsive">
+
+			<h:form id="formDetail">
+
+				<h:panelGroup rendered="#{not empty messageBean.selectedMessage}">
+
+					<h3>#{messageBean.selectedMessage.subject}</h3>
+
+					<small style="vertical-align: middle; display: block; margin-bottom: 10px;">
+					    <strong>#{messageBean.messageOriginLabel}:</strong>
+					    
+					    <h:outputText value=" #{messageBean.selectedMessage.folder eq 'sent' ? 
+					                           messageBean.selectedMessage.recipientNames : 
+					                           messageBean.selectedMessage.senderName}" />
+					    
+					    <span style="margin: 0 8px; color: #ccc;">|</span>
+					    
+					    <h:outputText value="#{messageBean.selectedMessage.createdAt}" 
+					                  style="font-size: 0.9em; color: #555;">
+					        <f:convertDateTime pattern="MMM dd, yyyy - hh:mm a" />
+					    </h:outputText>
+					</small>
+
+					<p:separator />
+
+					<div class="d-flex justify-content-between align-items-center mb-3">
+
+						<h:panelGroup rendered="#{!messageBean.currentFilter eq 'SENT'}">
+							<p:commandButton
+								title="#{messageBean.selectedMessage.starred ? 'Unstar' : 'Star'}"
+								actionListener="#{messageBean.toggleStar}"
+								icon="#{messageBean.selectedMessage.starred ? 'pi pi-star-fill' : 'pi pi-star'}"
+								styleClass="ui-button-flat p-mr-2"
+								style="color: #{messageBean.selectedMessage.starred ? 'gold' : '#000'};"
+								update="formDetail, :frm:data" />
+
+							<p:commandButton
+								title="#{messageBean.selectedMessage.archived ? 'Unarchive' : 'Archive'}"
+								actionListener="#{messageBean.toggleArchived}"
+								icon="#{messageBean.selectedMessage.archived ? 'pi pi-folder-open' : 'pi pi-folder-closed'}"
+								styleClass="ui-button-flat"
+								style="color: #{messageBean.selectedMessage.archived ? 'green' : '#000'};"
+								update="formDetail, :frm:data"
+								oncomplete="if(args.validationFailed) return; PF('dlgDetail').hide();" />
+						</h:panelGroup>
+
+					</div>
+					<p:outputPanel style="white-space:pre-line;">
+		                #{messageBean.selectedMessage.body}
+		            </p:outputPanel>
+
+					<p:separator />
+
+					<div class="d-flex justify-content-end gap-2">
+
+						<p:commandButton value="Reply" styleClass="btn btn-secondary"
+							actionListener="#{messageBean.prepareReply}" update=":dlgNew"
+							oncomplete="PF('dlgDetail').hide(); PF('dlgNew').show();" />
+
+						<p:commandButton value="Forward" styleClass="btn btn-secondary"
+							actionListener="#{messageBean.prepareForward}" update=":dlgNew"
+							oncomplete="PF('dlgDetail').hide(); PF('dlgNew').show();" />
+
+						<p:commandButton value="Close"
+							onclick="PF('dlgDetail').hide();return false;" />
+					</div>
+
+				</h:panelGroup>
+
+			</h:form>
+		</p:dialog>
+	</ui:define>
+</ui:composition>
+</html>

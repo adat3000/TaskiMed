@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui">
+
+<ui:composition template="/WEB-INF/plantilla.xhtml">
+    <ui:define name="contenido">
+        
+        <f:event type="preRenderView" listener="#{profileBean.cargarProfile}" />
+
+        <h:form id="formProfile">
+            <p:growl id="mensajes" showDetail="true" autoUpdate="true" globalOnly="true" />
+
+            <div class="mx-auto px-3" style="max-width: 800px; width: 100%;">
+                
+                <!-- Sección: Datos del Usuario -->
+                <div class="card mt-3">
+                    <div class="card-header bg-primary text-white">
+                        User Info
+                    </div>
+                    <div class="card-body">
+				        <!-- Si es invitación -->
+				        <h:panelGroup rendered="#{profileBean.modoInvitacion}">
+				            <div class="row mb-3">
+						    <div class="col-md-4">
+						        <p><strong>Name:</strong>
+						            <p:inputText value="#{profileBean.user.firstName}" readonly="true"
+						                         styleClass="form-control ui-state-disabled" />
+						        </p>
+						    </div>
+				                <div class="col-md-6">
+							        <p><strong>Username:</strong>
+					                    <p:inputText id="username" value="#{profileBean.user.username}" 
+					                                 label="User name" required="true" readonly="true"
+					                                 styleClass="form-control ui-state-disabled" placeholder="User name"/>
+							        </p>
+				                </div>
+				                <div class="col-md-6">
+							        <p><strong>Password:</strong>
+							            <p:password id="newPassword" value="#{profileBean.newPassword}" 
+							                        label="New password" required="true"
+							                        feedback="true" inline="true"
+							                        styleClass="form-control"
+							                        placeholder="New password"
+							                        promptLabel="Enter a password"
+							                        weakLabel="Week" 
+							                        goodLabel="Good" 
+							                        strongLabel="Strong"
+							                        match="confirmPassword" />
+							        </p>
+				                </div>
+				            </div>
+				            <div class="row mb-3">
+				                <div class="col-md-6">
+							        <p><strong>Confirm Password:</strong>
+							            <p:password id="confirmPassword" value="#{profileBean.confirmPassword}" 
+							                        label="Confirm password" required="true"
+							                        feedback="false"
+							                        styleClass="form-control"
+							                        placeholder="Confirm password"
+							                        validatorMessage="Passwords do not match">
+							                <f:validateRegex pattern=".{6,}" />
+							            </p:password>
+							        </p>
+				                </div>
+				            </div>
+				        </h:panelGroup>
+				
+				        <!-- Si es usuario logueado -->
+				        <h:panelGroup rendered="#{!profileBean.modoInvitacion}">
+				            <p><strong>Username:</strong> #{profileBean.user.username}</p>
+				            <p><strong>Role:</strong>
+							    <span class="badge
+							        #{empty profileBean.user.id ? ' bg-light text-dark' :
+							          (profileBean.user.roleName eq 'ADMIN' ? ' bg-success' :
+							          (profileBean.user.roleName eq 'STAFF' ? ' bg-info text-dark' : ' bg-secondary'))}">
+							        #{empty profileBean.user.id ? 'No role' : profileBean.user.roleName}
+							    </span>
+				            </p>
+				            <p:commandButton value="Change password"
+				                             type="button"
+				                             onclick="PF('dlgPassword').show()"
+				                             styleClass="btn btn-warning mt-2"
+				                             icon="pi pi-key"/>
+				        </h:panelGroup>
+                    </div>
+                </div>
+
+                <!-- Sección: Datos del Empleado -->
+                <div class="card mt-3">
+                    <div class="card-header bg-success text-white">
+                        User Details
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+						    <div class="col-md-4">
+						        <p><strong>User ID:</strong>
+						            <p:inputText value="#{profileBean.user.id}" readonly="true"
+						                         styleClass="form-control ui-state-disabled" />
+						        </p>
+						    </div>
+						
+						    <div class="col-md-4">
+						        <p><strong>First Name:</strong>
+						            <p:inputText value="#{profileBean.user.firstName}" readonly="true"
+						                         styleClass="form-control ui-state-disabled" />
+						        </p>
+						    </div>
+						
+						    <div class="col-md-4">
+						        <p><strong>Last Name:</strong>
+						            <p:inputText value="#{profileBean.user.lastName}" readonly="true"
+						                         styleClass="form-control ui-state-disabled" />
+						        </p>
+						    </div>
+                            <div class="col-md-6">
+                                <p><strong>Email:</strong>
+                                    <p:inputText id="email" value="#{profileBean.user.email}" readonly="true"
+                                                 label="Email" required="true" styleClass="form-control ui-state-disabled"/>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Phone:</strong>
+                                    <p:inputText id="telefono" value="#{profileBean.user.phone}" 
+                                                 label="Phone Number" styleClass="form-control"/>
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Job Position:</strong>
+                                    <p:inputText id="puesto" value="#{profileBean.user.jobPosition}" 
+                                                 label="Job Position" styleClass="form-control"/>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Entry Date:</strong>
+								    <h:inputText value="#{profileBean.user.entryDate}" readonly="true" styleClass="form-control ui-state-disabled">
+								        <f:convertDateTime pattern="MM/dd/yyyy"/>
+								    </h:inputText>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="col-12 d-flex justify-content-center gap-3 mt-3">
+                    <p:commandButton value="Save" actionListener="#{profileBean.guardar}" 
+                                     update="formProfile" styleClass="btn btn-success" icon="pi pi-save" />
+
+                    <p:commandButton value="Cancel" action="#{profileBean.cancelar}" 
+                                     immediate="true" styleClass="btn btn-secondary" icon="pi pi-times" />
+                </div>
+            </div>
+        </h:form>
+
+        <!-- Dialogo para cambiar contraseña -->
+        <p:dialog id="dlgPassword" header="Change Password" modal="true" closable="true" 
+                  widgetVar="dlgPassword" resizable="false" width="400">
+
+            <h:form id="formPassword">
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <p:password id="currentPassword" value="#{profileBean.currentPassword}" 
+                                    label="Current password" feedback="true" required="true"
+                                    styleClass="form-control" placeholder="Current password"/>
+                    </div>
+                    <div class="col-12 mb-3">
+                        <p:password id="newPassword" value="#{profileBean.newPassword}" 
+                                    label="New password" feedback="true" required="true"
+                                    styleClass="form-control" placeholder="New password"/>
+                    </div>
+                    <div class="col-12 mb-3">
+                        <p:password id="confirmPassword" value="#{profileBean.confirmPassword}" 
+                                    label="Confirm password" feedback="true" required="true"
+                                    styleClass="form-control" placeholder="Confirm password"/>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-center">
+                    <p:commandButton value="Update" actionListener="#{profileBean.cambiarPassword}"
+                                     update="formPassword formProfile:mensajes"
+                                     styleClass="btn btn-warning" icon="pi pi-check"
+                                     oncomplete="if (!args.validationFailed) PF('dlgPassword').hide();" />
+                </div>
+            </h:form>
+        </p:dialog>
+
+    </ui:define>
+</ui:composition>
+</html>

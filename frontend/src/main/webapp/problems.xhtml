@@ -1,0 +1,491 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui">
+
+<ui:composition template="/WEB-INF/plantilla.xhtml">
+    <ui:define name="contenido">
+		<style>
+			.view-dialog .ui-dialog-content {
+			    padding: 0 !important;
+			}
+			
+			.view-container {
+			    padding: 20px;
+			    font-family: "Roboto", sans-serif;
+			}
+			
+			.view-title {
+			    margin-bottom: 15px;
+			}
+			
+			.view-title h2 {
+			    font-size: 1.3rem;
+			    margin: 0;
+			    font-weight: 600;
+			}
+			
+			.status-badge {
+			    padding: 4px 10px;
+			    border-radius: 6px;
+			    font-size: 0.8rem;
+			    color: white;
+			    font-weight: 600;
+			    display: inline-block;
+			}
+			
+			/* Colores */
+			.status-badge.new         { background: #6c757d; }
+			.status-badge.in_progress { background: #f0ad4e; color:#222; }
+			.status-badge.completed   { background: #28a745; }
+			.status-badge.cancelled   { background: #dc3545; }
+			
+			.view-grid {
+			    display: grid;
+			    grid-template-columns: 120px 1fr;
+			    row-gap: 10px;
+			    column-gap: 10px;
+			}
+		
+			/* Estilo para los miembros (Chips) en modo View */
+			.member-chip {
+			    display: inline-flex;
+			    align-items: center;
+			    background: #e9ecef;
+			    border: 1px solid #dee2e6;
+			    padding: 4px 10px;
+			    margin: 2px;
+			    border-radius: 16px;
+			    font-size: 0.85rem;
+			    color: #495057;
+			}
+			
+			.label {
+			    font-weight: 600;
+			    color: #555;
+			}
+			
+			.value {
+			    color: #000;
+			}
+		</style>
+        <p:growl id="messageBox" showDetail="true" autoUpdate="true" />
+
+        <h:form id="frm">
+            <div class="container-fluid px-3">
+                <p:outputPanel id="panelData">
+                    <div class="table-responsive">
+                        <p:dataTable id="data"
+                                     var="Problem"
+                                     caption="Problem"
+                                     value="#{problemBean.lazyModel}"
+                                     widgetVar="tableEntity"
+                                     paginator="true"
+                                     paginatorPosition="bottom"
+                                     lazy="true"
+                                     rows="10"
+                                     rowsPerPageTemplate="5,10,15,25,50"
+                                     currentPageReportTemplate="{startRecord} - {endRecord} of {totalRecords} records"
+                                     paginatorTemplate="{CurrentPageReport} {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {RowsPerPageDropdown}"
+                                     reflow="true"
+                                     responsiveLayout="scroll"
+                                     styleClass="table table-hover table-striped table-bordered table-sm"
+                                     emptyMessage="No records"
+                                     sortMode="single"
+                                     rowKey="#{Problem.id}"
+                                     selectionMode="single"
+                                     selection="#{problemBean.selectedProblem}">
+
+                            <f:facet name="header">
+                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+
+                                    <!-- Column Toggler -->
+                                    <div>
+                                        <p:commandButton id="toggler" type="button" value="☰" styleClass="btn btn-outline-secondary" />
+                                        <p:columnToggler datasource="data" trigger="toggler" />
+                                    </div>
+
+									<div class="me-3">
+									    <p:commandButton value="Problems" type="button"
+									        style="
+									            padding: 0;
+									            margin: 0;
+									            border: none;
+									            background: transparent;
+									            color: #000000;
+									            font-size: 1.3rem;
+									            font-weight: 700;
+									            border-bottom: 2px solid #007ad9;
+									            box-shadow: none;
+									            cursor: default;
+									        " />
+									</div>
+
+                                    <!-- Buscar -->
+                                    <div class="d-flex align-items-center flex-nowrap" style="white-space: nowrap;">
+                                        <p:outputLabel for="globalFilter" value="Search:" styleClass="me-2" />
+                                        <p:inputText id="globalFilter"
+                                                     placeholder="Enter value to filter"
+                                                     style="max-width: 200px;"
+                                                     onkeypress="if (event.keyCode == 13) { PF('tableEntity').filter(); return false; }" />
+
+                                        <p:commandButton id="btnBuscar"
+                                                         icon="pi pi-search"
+                                                         styleClass="btn btn-outline-secondary ms-2"
+                                                         onclick="PF('tableEntity').filter(); return false;" />
+                                    </div>
+
+                                    <!-- Exportar -->
+                                    <div>
+                                        <p:commandButton value="Export to Excel" icon="pi pi-file-excel"
+                                                         styleClass="btn btn-outline-secondary"
+                                                         ajax="false">
+                                            <p:dataExporter type="xlsx"
+                                                            target="data"
+                                                            fileName="problems"
+                                                            exportHeader="true"
+                                                            exportFooter="true" />
+                                        </p:commandButton>
+                                    </div>
+
+                                    <!-- Botón Nuevo -->
+                                    <div>
+                                        <p:commandButton id="btnNuevo" value="New" icon="pi pi-fw pi-plus"
+                                                         styleClass="btn btn-primary"
+                                                         rendered="#{loginBean.admin}"
+                                                         actionListener="#{problemBean.clear()}"
+                                                         oncomplete="PF('wdlgData').show();"
+                                                         update=":dlgData">
+                                            <f:setPropertyActionListener value="Create" target="#{problemBean.action}" />
+                                        </p:commandButton>
+                                    </div>
+
+                                </div>
+                            </f:facet>
+
+                            <!-- Columnas -->
+                            <p:column headerText="ID" visible="false" sortBy="#{Problem.id}" field="id" filterBy="#{Problem.id}" filterStyle="display:none">
+                                <h:outputLabel value="#{Problem.id}" />
+                            </p:column>
+
+                            <p:column headerText="Problem" sortBy="#{Problem.name}" field="name" filterBy="#{Problem.name}" filterStyle="display:none">
+                                <h:outputLabel value="#{Problem.name}" />
+                            </p:column>
+
+                            <p:column headerText="Alias" sortBy="#{Problem.alias}" field="alias" filterBy="#{Problem.alias}" filterStyle="display:none">
+						        <span class="badge bg-info text-dark">
+						            #{Problem.alias}
+						        </span>
+                            </p:column>
+
+							<p:column headerText="Patients" width="150">
+    
+							    <h:panelGroup rendered="#{empty Problem.patients}">
+							        <span class="badge bg-secondary">
+							            <i class="pi pi-list me-1"></i> 0 Patients
+							        </span>
+							    </h:panelGroup>
+							
+							    <h:panelGroup id="patientBadge" rendered="#{not empty Problem.patients}"
+							                  layout="block" 
+							                  style="cursor:pointer"
+							                  styleClass="badge-custom bg-primary text-white">
+							        <i class="pi pi-list me-1"></i> #{Problem.patients.size()} Patients
+							    </h:panelGroup>
+							
+							    <p:overlayPanel for="patientBadge" 
+							                    widgetVar="ovlPatients_#{Problem.id}"
+							                    dismissable="true" 
+							                    showEvent="click"
+							                    showCloseIcon="true" 
+							                    dynamic="true" 
+							                    fitViewport="true"
+							                    cache="false"
+							                    styleClass="custom-overlay"
+							                    my="center top"
+							                    at="center bottom">
+							        
+							        <h:panelGroup id="listContainer" layout="block" style="height: auto; min-width: 200px;">
+							            <div style="max-height: 350px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 8px;" class="bg-light">
+								            <p:dataTable id="tblPatients" 
+								                         value="#{Problem.patients.stream().toList()}" 
+												         var="p"
+								                         widgetVar="wTblPatients"
+								                         emptyMessage="No patients found"
+								                         rows="8" 
+								                         paginator="true"
+								                         paginatorPosition="bottom"
+								                         paginatorTemplate="{PreviousPageLink} {PageLinks} {NextPageLink}"
+								                         size="small"
+								                         scrollable="true" 
+								                         scrollHeight="200"
+								                         globalFilterOnly="true"
+								                         styleClass="no-header-table border-0">
+								
+												<f:facet name="header">
+												    <div class="ui-inputgroup w-100" style="display: flex;">
+												        <span class="ui-inputgroup-addon">
+												            <i class="pi pi-search" />
+												        </span>
+												        
+												        <p:inputText id="globalFilter" 
+												                     placeholder="Search patient..." 
+												                     styleClass="shadow-none border-secondary"
+												                     style="flex-grow: 1; border-left: none;"
+												                     tabindex="-1"
+												                     onkeypress="if (event.keyCode == 13) { PF('wTblPatients').filter(); return false; }" />
+												        
+												        <p:commandButton icon="pi pi-filter" 
+												                         onclick="PF('wTblPatients').filter()" 
+												                         type="button"
+												                         process="@this"
+												                         styleClass="ui-button-primary"
+												                         title="Filter" />
+												    </div>
+												</f:facet>
+								
+								                <p:column filterBy="#{p.firstName} #{p.lastName} #{p.mrn}" 
+								                          filterMatchMode="contains" 
+								                          styleClass="border-0 p-0">
+								                    
+								                    <div class="p-2 d-flex align-items-center border-bottom bg-white">
+								                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" 
+								                             style="width: 35px; height: 35px; font-size: 0.8rem; min-width: 35px;">
+								                            #{p.firstName.substring(0,1)}#{p.lastName.substring(0,1)}
+								                        </div>
+								                        
+								                        <div style="flex-grow: 1;">
+								                            <div class="fw-bold text-dark" style="font-size: 0.9rem;">
+								                                #{p.firstName} #{p.lastName}
+								                            </div>
+								                            <div class="text-muted" style="font-size: 0.75rem;">
+								                                <i class="pi pi-id-card me-1"></i>MRN: #{p.mrn}
+								                            </div>
+								                        </div>
+								                        
+								                        <i class="pi pi-chevron-right text-light" style="font-size: 0.8rem;"></i>
+								                    </div>
+								                </p:column>
+								            </p:dataTable>
+							
+							                <h:panelGroup rendered="#{empty Problem.patients.stream().toList()}" layout="block" class="p-4 text-center text-muted italic">
+							                    <i class="pi pi-info-circle d-block mb-2" style="font-size: 1.5rem;"></i>
+							                    No patients assigned
+							                </h:panelGroup>
+							            </div>
+							        </h:panelGroup>
+							    </p:overlayPanel>
+							</p:column>
+
+							<p:column headerText="View" exportable="false">
+							    <p:commandButton icon="pi pi-eye"
+							                     update=":dlgViewProblem"
+							                     oncomplete="PF('wdlgViewProblem').show();"
+							                     process="@this"
+							                     styleClass="ui-button-flat ui-button-plain"
+							                     style="#{problemBean.canModify() ? 'color: #007bff;' : 'color: #495057; font-weight: bold;'}">
+							        <f:setPropertyActionListener value="#{Problem}" target="#{problemBean.selectedProblem}" />
+							        <f:setPropertyActionListener value="Update" target="#{problemBean.action}" />
+							    </p:commandButton>
+							</p:column>
+
+                            <p:column headerText="Delete" exportable="false" rendered="#{loginBean.admin}">
+                                <p:commandButton icon="pi pi-trash"
+                                                 action="#{problemBean.delete}"
+                                                 update=":frm:data, :messageBox"
+                                                 process="@this"
+                                                 data-pfconfirmcommand="true"
+							                     rendered="#{loginBean.admin}">
+                                    <p:confirm header="Warning"
+							                   message="If this problem is currently in use, it will be permanently deleted from your patients. Do you want to proceed?"
+							                   icon="pi pi-exclamation-triangle" />
+                                    <f:setPropertyActionListener value="#{Problem}" target="#{problemBean.selectedProblem}" />
+                                </p:commandButton>
+                            </p:column>
+                        </p:dataTable>
+                    </div>
+                </p:outputPanel>
+            </div>
+
+            <p:confirmDialog global="true" showEffect="fade" hideEffect="fade">
+                <p:commandButton value="Yes" type="button"
+                                 styleClass="ui-confirmdialog-yes" icon="pi pi-check" />
+                <p:commandButton value="No" type="button"
+                                 styleClass="ui-confirmdialog-no ui-button-flat" icon="pi pi-times" />
+            </p:confirmDialog>
+
+        </h:form>
+
+        <!-- Diálogo de Nuevo/Editar -->
+        <p:dialog id="dlgData" widgetVar="wdlgData" rendered="#{loginBean.admin}"
+                  modal="true" appendTo="@(body)" closeOnEscape="true" resizable="true"
+                  responsive="true" style="max-width: 100vw; overflow-x: hidden;"
+                  header="#{problemBean.action eq 'Update' ? 'Problem Info':'New Problem'}">
+
+            <h:form id="frmNewEdit">
+                <p:outputPanel id="panelNewEdit" style="overflow-y:auto; max-height:70vh; overflow-x:hidden;">
+                    <div class="mx-auto px-3" style="max-width: 800px; width: 100%;">
+                        <div class="card mt-3">
+                            <div class="card-header bg-primary text-white">
+                                Problem Details
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <p><strong>Name:</strong>
+                                            <p:inputText id="name" value="#{problemBean.selectedProblem.name}" required="true" styleClass="form-control"/>
+                                        </p>
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <p><strong>Alias:</strong>
+                                            <p:inputText id="alias" value="#{problemBean.selectedProblem.alias}" maxlength="8" required="false" styleClass="form-control"/>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="col-12 d-flex justify-content-center gap-3 mt-3">
+                            <p:commandButton id="ok_button" value="Save"
+                                             actionListener="#{problemBean.ejecutar()}"
+                                             process="@form"
+                                             oncomplete="if (args &amp;&amp; !args.validationFailed) PF('wdlgData').hide();"
+                                             update=":frmNewEdit:panelNewEdit :frm:panelData :messageBox"
+                                             styleClass="btn btn-primary" />
+
+                            <p:commandButton id="cancel_button" value="Cancel"
+                                             immediate="true"
+                                             oncomplete="PF('wdlgData').hide();"
+                                             styleClass="btn btn-secondary">
+                                <p:ajax update="panelNewEdit" resetValues="true" />
+                            </p:commandButton>
+
+                            <p:defaultCommand target="ok_button" />
+                        </div>
+                    </div>
+                </p:outputPanel>
+            </h:form>
+        </p:dialog>
+		<p:dialog id="dlgViewProblem"
+		          widgetVar="wdlgViewProblem"
+		          modal="true"
+		          header="Problem Details"
+		          responsive="true"
+		          resizable="true"
+		          styleClass="view-dialog"
+		          showEffect="fade" hideEffect="fade"
+		          width="350px"
+		          fitViewport="true">
+		    <h:form id="frmViewProblem">   <!-- ← FORM OBLIGATORIO -->
+				<p:inputText readonly="true" 
+                     style="position:absolute; opacity:0; height:0; width:0; z-index:-1; border:none;" />
+			    <h:panelGroup id="panelViewProblem" layout="block" styleClass="view-container"
+			    style="max-height: 90vh; overflow-y: auto; overflow-x: hidden; padding-right: 5px;">
+			
+			        <!-- Sección de Título -->
+			        <div class="view-title">
+			            #{problemBean.selectedProblem.name}
+					        <span class="badge bg-info text-dark">
+					            #{problemBean.selectedProblem.alias}
+					        </span>
+			        </div>
+			
+		            <div class="label mb-2 fw-bold text-primary">
+		                <i class="pi pi-users me-1"></i> Assigned Patients (#{problemBean.selectedProblem.patients.size()}):
+		            </div>
+		
+		            <div style="max-height: 350px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 8px;" class="bg-light">
+			            <p:dataTable id="tblPatients" 
+			                         value="#{problemBean.selectedProblem.patients}" 
+			                         var="patient"
+			                         widgetVar="wTblPatients"
+			                         emptyMessage="No patients found"
+			                         rows="8" 
+			                         paginator="true"
+			                         paginatorPosition="bottom"
+			                         paginatorTemplate="{PreviousPageLink} {PageLinks} {NextPageLink}"
+			                         size="small"
+			                         scrollable="true" 
+			                         scrollHeight="200"
+			                         globalFilterOnly="true"
+			                         styleClass="no-header-table border-0">
+			
+							<f:facet name="header">
+							    <div class="ui-inputgroup w-100" style="display: flex;">
+							        <span class="ui-inputgroup-addon">
+							            <i class="pi pi-search" />
+							        </span>
+							        
+							        <p:inputText id="globalFilter" 
+							                     placeholder="Search patient..." 
+							                     styleClass="shadow-none border-secondary"
+							                     style="flex-grow: 1; border-left: none;"
+							                     tabindex="-1"
+							                     onkeypress="if (event.keyCode == 13) { PF('wTblPatients').filter(); return false; }" />
+							        
+							        <p:commandButton icon="pi pi-filter" 
+							                         onclick="PF('wTblPatients').filter()" 
+							                         type="button"
+							                         process="@this"
+							                         styleClass="ui-button-primary"
+							                         title="Filter" />
+							    </div>
+							</f:facet>
+			
+			                <p:column filterBy="#{patient.firstName} #{patient.lastName} #{patient.mrn}" 
+			                          filterMatchMode="contains" 
+			                          styleClass="border-0 p-0">
+			                    
+			                    <div class="p-2 d-flex align-items-center border-bottom bg-white">
+			                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" 
+			                             style="width: 35px; height: 35px; font-size: 0.8rem; min-width: 35px;">
+			                            #{patient.firstName.substring(0,1)}#{patient.lastName.substring(0,1)}
+			                        </div>
+			                        
+			                        <div style="flex-grow: 1;">
+			                            <div class="fw-bold text-dark" style="font-size: 0.9rem;">
+			                                #{patient.firstName} #{patient.lastName}
+			                            </div>
+			                            <div class="text-muted" style="font-size: 0.75rem;">
+			                                <i class="pi pi-id-card me-1"></i>MRN: #{patient.mrn}
+			                            </div>
+			                        </div>
+			                        
+			                        <i class="pi pi-chevron-right text-light" style="font-size: 0.8rem;"></i>
+			                    </div>
+			                </p:column>
+			            </p:dataTable>
+		
+		                <h:panelGroup rendered="#{empty problemBean.selectedProblem.patients}" layout="block" class="p-4 text-center text-muted italic">
+		                    <i class="pi pi-info-circle d-block mb-2" style="font-size: 1.5rem;"></i>
+		                    No patients assigned
+		                </h:panelGroup>
+		            </div>
+	
+	                <!-- Botones -->
+	                <div class="form-actions-container">
+							<p:commandButton id="edit_details_button" 
+						                 value="Edit"
+						                 icon="pi pi-pencil"
+						                 rendered="#{problemBean.canModify()}"
+						                 oncomplete="PF('wdlgViewProblem').hide(); PF('wdlgData').show();"
+						                 update=":dlgData"
+						                 styleClass="custom-dlg-btn edit-btn" />	
+	
+	                    <p:commandButton id="cancel_button" value="Cancel"
+	                                     immediate="true"
+	                                     oncomplete="PF('wdlgViewProblem').hide();"
+	                                     styleClass="custom-dlg-btn cancel-btn"/>
+	                </div>
+			
+			    </h:panelGroup>
+		    </h:form>
+		</p:dialog>
+    </ui:define>
+</ui:composition>
+</html>
